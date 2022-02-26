@@ -17,11 +17,10 @@ def compute_sif_weights(words_counter: dict, alpha: Optional[float] = 0.001) -> 
     """
     A function that computes smooth inverse frequency (SIF) weights based on word frequencies.
     (See "Arora, S., Liang, Y., & Ma, T. (2016). A simple but tough-to-beat baseline for sentence embeddings.")
-    Args:
-        words_counter: a dictionary {"word": frequency}
-        alpha: regularization parameter
-    Returns:
-        A dictionary {"word": SIF weight}
+
+    :param words_counter: A dictionary {"word": frequency}
+    :param alpha:         Regularization parameter
+    :return:              A dictionary {"word": SIF weight}
     """
 
     sif_dict = {}
@@ -88,14 +87,13 @@ class SIF_keyed_vectors(SIF_word2vec):
 def get_vector(tokens: List[str], model: Union[USE, SIF_word2vec, SIF_keyed_vectors]):
     """
     A function that computes an embedding vector for a list of tokens.
-    Args:
-        tokens: list of string tokens to embed
-        model: trained embedding model. It can be either:
+
+    :param tokens: List of string tokens to embed
+    :param model: Trained embedding model. It can be either:
          - Universal Sentence Encoders (USE)
-         - a full gensim Word2Vec model (SIF_word2vec)
-         - gensim Keyed Vectors based on a pre-trained model (SIF_keyed_vectors)
-    Returns:
-        A two-dimensional numpy array (1, dimension of the embedding space)
+         - A full gensim Word2Vec model (SIF_word2vec)
+         - Gensim Keyed Vectors based on a pre-trained model (SIF_keyed_vectors)
+    :return: A two-dimensional numpy array (1, dimension of the embedding space)
     """
 
     if not isinstance(model, (USE, SIF_word2vec, SIF_keyed_vectors)):
@@ -112,18 +110,16 @@ def get_vector(tokens: List[str], model: Union[USE, SIF_word2vec, SIF_keyed_vect
 
 def get_vectors(postproc_roles, model: Union[USE, SIF_word2vec, SIF_keyed_vectors], used_roles=List[str]):
     """
-    A function to train a K-Means model on the corpus.
-    Args:
-        postproc_roles: list of statements
-        model: trained embedding model. It can be either:
-         - Universal Sentence Encoders (USE)
-         - a full gensim Word2Vec model (SIF_word2vec)
-         - gensim Keyed Vectors based on a pre-trained model (SIF_keyed_vectors)
-        used_roles: list of semantic roles to cluster together
-    Returns:
-        A list of vectors
-    """
 
+    A function to train a K-Means model on the corpus.
+    :param postproc_roles: List of statements
+    :param model: Trained embedding model. It can be either:
+         - Universal Sentence Encoders (USE)
+         - A full gensim Word2Vec model (SIF_word2vec)
+         - Gensim Keyed Vectors based on a pre-trained model (SIF_keyed_vectors)
+    :param used_roles: List of semantic roles to cluster together
+    :return: A list of vectors
+    """
     role_counts = count_values(postproc_roles, keys=used_roles)
     role_counts = [role.split() for role in list(role_counts)]
 
