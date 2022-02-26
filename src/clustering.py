@@ -110,7 +110,6 @@ def get_vector(tokens: List[str], model: Union[USE, SIF_word2vec, SIF_keyed_vect
 
 def get_vectors(postproc_roles, model: Union[USE, SIF_word2vec, SIF_keyed_vectors], used_roles=List[str]):
     """
-
     A function to train a K-Means model on the corpus.
     :param postproc_roles: List of statements
     :param model: Trained embedding model. It can be either:
@@ -120,6 +119,7 @@ def get_vectors(postproc_roles, model: Union[USE, SIF_word2vec, SIF_keyed_vector
     :param used_roles: List of semantic roles to cluster together
     :return: A list of vectors
     """
+
     role_counts = count_values(postproc_roles, keys=used_roles)
     role_counts = [role.split() for role in list(role_counts)]
 
