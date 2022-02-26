@@ -137,12 +137,12 @@ def get_vectors(postproc_roles, model: Union[USE, SIF_word2vec, SIF_keyed_vector
 def train_cluster_model(vecs, n_clusters, random_state: Optional[int] = 0, verbose: Optional[int] = 0):
     """
     Train a kmeans model on the corpus.
-    Args:
-        vecs: list of vectors
-        random_state: seed for replication (default is 0)
-        verbose: see Scikit-learn documentation for details
-    Returns:
-        A Scikit-learn kmeans model
+
+    :param vecs: list of vectors
+    :param n_clusters: Number of clusters
+    :param random_state: seed for replication (default is 0)
+    :param verbose: see Scikit-learn documentation for details
+    :return: A Scikit-learn kmeans model
     """
 
     kmeans = KMeans(n_clusters=n_clusters, random_state=random_state, verbose=verbose).fit(vecs)
@@ -154,16 +154,14 @@ def get_clusters(postproc_roles: List[dict], model: Union[USE, SIF_word2vec, SIF
                  used_roles=List[str], progress_bar: bool = False, suffix: str = "_lowdim") -> List[dict]:
     """
     Predict clusters based on a pre-trained kmeans model.
-    Args:
-        postproc_roles: list of statements
-        model: trained embedding model
-        (e.g. either Universal Sentence Encoders, a full gensim Word2Vec model or gensim Keyed Vectors)
-        kmeans = a pre-trained sklearn kmeans model
-        used_roles: list of semantic roles to consider
-        progress_bar: print a progress bar (default is False)
-        suffix: suffix for the new dimension-reduced role's name (e.g. 'ARGO_lowdim')
-    Returns:
-        A list of dictionaries with the predicted cluster for each role
+
+    :param postproc_roles: list of statements
+    :param model: Trained embedding model (e.g. either Universal Sentence Encoders, a full gensim Word2Vec model or gensim Keyed Vectors)
+    :param kmeans: A pre-trained sklearn kmeans model
+    :param used_roles: list of semantic roles to consider
+    :param progress_bar: print a progress bar (default is False)
+    :param suffix: suffix for the new dimension-reduced role's name (e.g. 'ARGO_lowdim')
+    :return: A list of dictionaries with the predicted cluster for each role
     """
 
     roles_copy = deepcopy(postproc_roles)
@@ -195,11 +193,10 @@ def get_clusters(postproc_roles: List[dict], model: Union[USE, SIF_word2vec, SIF
 def label_clusters_most_freq(clustering_res: List[dict], postproc_roles: List[dict]) -> dict:
     """
     A function which labels clusters by their most frequent term.
-    Args:
-        clustering_res: list of dictionaries with the predicted cluster for each role
-        postproc_roles: list of statements
-    Returns:
-        A dictionary associating to each cluster number a label (e.g. the most frequent term in this cluster)
+
+    :param clustering_res: list of dictionaries with the predicted cluster for each role
+    :param postproc_roles: list of statements
+    :return: A dictionary associating to each cluster number a label (e.g. the most frequent term in this cluster)
     """
 
     temp = {}
@@ -228,14 +225,12 @@ def label_clusters_most_similar(kmeans, model) -> dict:
     """
     A function which labels clusters by the term closest to the centroid in the embedding
     (i.e. distance is cosine similarity)
-    Args:
-        kmeans: the trained kmeans model
-        model: trained embedding model. It can be either:
+
+    :param kmeans: the trained kmeans model
+    :param model: trained embedding model. It can be either:
          - a full gensim Word2Vec model (SIF_word2vec)
          - gensim Keyed Vectors based on a pre-trained model (SIF_keyed_vectors)
-    Returns:
-        A dictionary associating to each cluster number a label
-        (e.g. the most similar term to cluster's centroid)
+    :return: A dictionary associating to each cluster number a label (e.g. the most similar term to cluster's centroid)
     """
 
     labels = {}
