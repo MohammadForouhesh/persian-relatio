@@ -267,12 +267,11 @@ def build_narrative_model(srl_res: List[dict], sentences: List[str],
             vecs = get_vectors(postproc_roles, model, used_roles=roles)
 
             for num in n_clusters[i]:
-
                 if (output_path is not None) and os.path.isfile(output_path + "kmeans_%s_%s.pk" % (i, num)):
                     with open(output_path + "kmeans_%s_%s.pk" % (i, num), "rb") as f:
                         kmeans = pk.load(f)
                 else:
-                    kmeans = train_cluster_model(vecs, model, n_clusters=num, verbose=verbose, random_state=random_state)
+                    kmeans = train_cluster_model(vecs, n_clusters=num, verbose=verbose, random_state=random_state)
 
                 if output_path is not None:
                     with open(output_path + "kmeans_%s_%s.pk" % (i, num), "wb") as f:
