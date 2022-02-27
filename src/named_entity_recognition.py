@@ -10,7 +10,8 @@ from tqdm import tqdm
 
 from .utils import clean_text, is_subsequence
 
-nlp = spacy.load("en_core_web_sm")
+nlp = spacy.load('xx_ent_wiki_sm')
+nlp.add_pipe('senter', source=spacy.load('xx_sent_ud_sm'))
 
 
 def mine_entities(sentences: List[str], ent_labels: Optional[List[str]] = ["PERSON", "NORP", "ORG", "GPE", "EVENT"],
