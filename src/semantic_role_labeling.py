@@ -18,17 +18,9 @@ from .utils import clean_text, group_sentences_in_batches, replace_sentences
 
 
 class SRL:
-    def __init__(
-        self,
-        path: str,
-        cuda_device: int = -1,
-        max_batch_char_length: Optional[int] = None,
-        batch_size: Optional[int] = None,
-        max_sentence_length: Optional[int] = None,
-        max_number_words: Optional[int] = None,
-        cuda_empty_cache: bool = True,
-        cuda_sleep: float = 0.0,
-    ):
+    def __init__(self, path: str, cuda_device: int = -1, max_batch_char_length: Optional[int] = None,
+                 batch_size: Optional[int] = None, max_sentence_length: Optional[int] = None,
+                 max_number_words: Optional[int] = None, cuda_empty_cache: bool = True, cuda_sleep: float = 0.0):
         self._predictor = Predictor.from_path(path, cuda_device=cuda_device)
         self._max_batch_char_length = max_batch_char_length
         self._batch_size = batch_size
@@ -44,52 +36,23 @@ class SRL:
                 torch.cuda.empty_cache()
                 time.sleep(cuda_sleep)
 
-    def __call__(
-        self,
-        sentences: List[str],
-        max_batch_char_length: Optional[int] = None,
-        batch_size: Optional[int] = None,
-        max_sentence_length: Optional[int] = None,
-        max_number_words: Optional[int] = None,
-        cuda_empty_cache: bool = None,
-        cuda_sleep: float = None,
-        progress_bar: bool = False,
-    ):
-        max_batch_char_length = (
-            max_batch_char_length
-            if max_batch_char_length is not None
-            else self._max_batch_char_length
-        )
+    def __call__(self, sentences: List[str], max_batch_char_length: Optional[int] = None, batch_size: Optional[int] = None,
+                 max_sentence_length: Optional[int] = None, max_number_words: Optional[int] = None, cuda_empty_cache: bool = None,
+                 cuda_sleep: float = None, progress_bar: bool = False):
+        max_batch_char_length = (max_batch_char_length if max_batch_char_length is not None
+                                 else self._max_batch_char_length)
 
         batch_size = batch_size if batch_size is not None else self._batch_size
+        max_sentence_length = (max_sentence_length if max_sentence_length is not None else self._max_sentence_length)
 
-        max_sentence_length = (
-            max_sentence_length
-            if max_sentence_length is not None
-            else self._max_sentence_length
-        )
-
-        max_number_words = (
-            max_number_words if max_number_words is not None else self._max_number_words
-        )
-
-        cuda_empty_cache = (
-            cuda_empty_cache if cuda_empty_cache is not None else self._cuda_empty_cache
-        )
+        max_number_words = (max_number_words if max_number_words is not None else self._max_number_words)
+        cuda_empty_cache = (cuda_empty_cache if cuda_empty_cache is not None else self._cuda_empty_cache)
 
         cuda_sleep = cuda_sleep if cuda_sleep is not None else self._cuda_sleep
 
-        sentences = replace_sentences(
-            sentences,
-            max_sentence_length=max_sentence_length,
-            max_number_words=max_number_words,
-        )
+        sentences = replace_sentences(sentences, max_sentence_length=max_sentence_length, max_number_words=max_number_words)
 
-        batches = group_sentences_in_batches(
-            sentences,
-            max_batch_char_length=max_batch_char_length,
-            batch_size=batch_size,
-        )
+        batches = group_sentences_in_batches(sentences, max_batch_char_length=max_batch_char_length, batch_size=batch_size)
 
         res: List[Dict[str, List]] = []
 
