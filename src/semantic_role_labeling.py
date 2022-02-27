@@ -144,9 +144,7 @@ def extract_roles(srl: List[Dict[str, Any]], used_roles: List[str],
     return statements_role_list, np.asarray(sentence_index, dtype=np.uint32)
 
 
-def extract_role_per_sentence(
-    sentence_dict: dict, used_roles: List[str]
-) -> List[Dict[str, Union[str, bool]]]:
+def extract_role_per_sentence(sentence_dict: dict, used_roles: List[str]) -> List[Dict[str, Union[str, bool]]]:
 
     """
     A function that extracts the semantic roles for a given sentence.
@@ -190,22 +188,11 @@ def extract_role_per_sentence(
     return sentence_role_list
 
 
-def process_roles(
-    statements: List[Dict[str, List]],
-    max_length: Optional[int] = None,
-    remove_punctuation: bool = True,
-    remove_digits: bool = True,
-    remove_chars: str = "",
-    stop_words: Optional[List[str]] = None,
-    lowercase: bool = True,
-    strip: bool = True,
-    remove_whitespaces: bool = True,
-    lemmatize: bool = False,
-    stem: bool = False,
-    tags_to_keep: Optional[List[str]] = None,
-    remove_n_letter_words: Optional[int] = None,
-    progress_bar: bool = False,
-) -> List[Dict[str, List]]:
+def process_roles(statements: List[Dict[str, List]], max_length: Optional[int] = None, remove_punctuation: bool = True,
+                  remove_digits: bool = True, remove_chars: str = "", stop_words: Optional[List[str]] = None,
+                  lowercase: bool = True, strip: bool = True, remove_whitespaces: bool = True, lemmatize: bool = False,
+                  stem: bool = False, tags_to_keep: Optional[List[str]] = None, remove_n_letter_words: Optional[int] = None,
+                  progress_bar: bool = False) -> List[Dict[str, List]]:
 
     """
     Takes a list of raw extracted semantic roles and cleans the text.
