@@ -16,13 +16,12 @@ from tqdm import tqdm
 nlp = spacy.load('xx_ent_wiki_sm')
 nlp.add_pipe('senter', source=spacy.load('xx_sent_ud_sm'))
 
+wnl = WordNetLemmatizer()
+f_lemmatize = wnl.lemmatize
 
-def split_into_sentences(
-    dataframe: pd.DataFrame,
-    output_path: Optional[str] = None,
-    progress_bar: bool = False,
-) -> Tuple[List[str], List[str]]:
 
+def split_into_sentences(dataframe: pd.DataFrame, output_path: Optional[str] = None,
+                         progress_bar: bool = False) -> Tuple[List[str], List[str]]:
     """
     A function that splits a list of documents into sentences (using the SpaCy sentence splitter).
     Args:
@@ -52,14 +51,11 @@ def split_into_sentences(
         with open(output_path, "w") as f:
             json.dump((doc_indices, sentences), f)
 
-    return (doc_indices, sentences)
+    return doc_indices, sentences
 
 
-def replace_sentences(
-    sentences: List[str],
-    max_sentence_length: Optional[int] = None,
-    max_number_words: Optional[int] = None,
-) -> List[str]:
+def replace_sentences(sentences: List[str], max_sentence_length: Optional[int] = None,
+                      max_number_words: Optional[int] = None) -> List[str]:
 
     """
     Replace long sentences in list of sentences by empty strings.
@@ -109,12 +105,8 @@ def replace_sentences(
     return sentences
 
 
-def group_sentences_in_batches(
-    sentences: List[str],
-    max_batch_char_length: Optional[int] = None,
-    batch_size: Optional[int] = None,
-) -> List[List[str]]:
-
+def group_sentences_in_batches(sentences: List[str], max_batch_char_length: Optional[int] = None,
+                               batch_size: Optional[int] = None) -> List[List[str]]:
     """
     Group sentences in batches of given total character length or size (number of sentences).
     In case a sentence is longer than max_batch_char_length it is replaced with an empty string.
@@ -172,9 +164,7 @@ def group_sentences_in_batches(
             batches.append(batch)
 
     elif batch_size is not None:
-        batches = [
-            sentences[i : i + batch_size] for i in range(0, len(sentences), batch_size)
-        ]
+        batches = [sentences[i : i + batch_size] for i in range(0, len(sentences), batch_size)]
     else:
         batches = [sentences]
 
@@ -188,25 +178,9 @@ def _get_wordnet_pos(word):
     return tag
 
 
-wnl = WordNetLemmatizer()
-f_lemmatize = wnl.lemmatize
-
-
-def clean_text(
-    sentences: List[str],
-    remove_punctuation: bool = True,
-    remove_digits: bool = True,
-    remove_chars: str = "",
-    stop_words: Optional[List[str]] = None,
-    lowercase: bool = True,
-    strip: bool = True,
-    remove_whitespaces: bool = True,
-    lemmatize: bool = False,
-    stem: bool = False,
-    tags_to_keep: Optional[List[str]] = None,
-    remove_n_letter_words: Optional[int] = None,
-) -> List[str]:
-
+def clean_text(sentences: List[str], remove_punctuation: bool = True, remove_digits: bool = True, remove_chars: str = "",
+               stop_words: Optional[List[str]] = None, lowercase: bool = True, strip: bool = True, remove_whitespaces: bool = True,
+               lemmatize: bool = False, stem: bool = False, tags_to_keep: Optional[List[str]] = None, remove_n_letter_words: Optional[int] = None) -> List[str]:
     """
     Clean a list of sentences.
     Args:
@@ -352,9 +326,7 @@ def is_subsequence(v1: list, v2: list) -> bool:
     return set(v1).issubset(set(v2))
 
 
-def count_values(
-    dicts: List[Dict], keys: Optional[list] = None, progress_bar: bool = False
-) -> Counter:
+def count_values(dicts: List[Dict], keys: Optional[list] = None, progress_bar: bool = False) -> Counter:
 
     """
     Get a counter with the values of a list of dictionaries, with the conssidered keys given as argument.
