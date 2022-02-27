@@ -13,7 +13,8 @@ from nltk.corpus import wordnet
 from nltk.stem import SnowballStemmer, WordNetLemmatizer
 from tqdm import tqdm
 
-nlp = spacy.load("en_core_web_sm", disable=["tagger", "ner", "lemmatizer"])
+nlp = spacy.load('xx_ent_wiki_sm')
+nlp.add_pipe('senter', source=spacy.load('xx_sent_ud_sm'))
 
 
 def split_into_sentences(
