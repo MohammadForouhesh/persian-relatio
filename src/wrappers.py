@@ -2,7 +2,7 @@
 import json
 import os
 import pickle as pk
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -69,43 +69,17 @@ def run_srl(
     return srl_res
 
 
-def build_narrative_model(
-    srl_res: List[dict],
-    sentences: List[str],
-    roles_considered: List[str] = [
-        "ARG0",
-        "B-V",
-        "B-ARGM-NEG",
-        "B-ARGM-MOD",
-        "ARG1",
-        "ARG2",
-    ],
-    output_path: Optional[str] = None,
-    max_length: Optional[int] = None,
-    remove_punctuation: bool = True,
-    remove_digits: bool = True,
-    remove_chars: str = "",
-    stop_words: Optional[List[str]] = None,
-    lowercase: bool = True,
-    strip: bool = True,
-    remove_whitespaces: bool = True,
-    lemmatize: bool = True,
-    stem: bool = False,
-    tags_to_keep: Optional[List[str]] = None,
-    remove_n_letter_words: Optional[int] = None,
-    roles_with_embeddings: List[List[str]] = [["ARG0", "ARG1", "ARG2"]],
-    embeddings_type: Optional[str] = None,
-    embeddings_path: Optional[str] = None,
-    n_clusters: List[List[int]] = [[1]],
-    verbose: int = 0,
-    random_state: int = 0,
-    roles_with_entities: List[str] = ["ARG0", "ARG1", "ARG2"],
-    ent_labels: List[str] = ["PERSON", "NORP", "ORG", "GPE", "EVENT"],
-    top_n_entities: Optional[int] = None,
-    dimension_reduce_verbs: Optional[bool] = True,
-    progress_bar: bool = False,
-):
-
+def build_narrative_model(srl_res: List[dict], sentences: List[str],
+                          roles_considered: Tuple[str] = ("ARG0", "B-V", "B-ARGM-NEG", "B-ARGM-MOD", "ARG1", "ARG2"),
+                          output_path: Optional[str] = None, max_length: Optional[int] = None, remove_punctuation: bool = True,
+                          remove_digits: bool = True, remove_chars: str = "", stop_words: Optional[List[str]] = None,
+                          lowercase: bool = True, strip: bool = True, remove_whitespaces: bool = True, lemmatize: bool = True,
+                          stem: bool = False, tags_to_keep: Optional[List[str]] = None, remove_n_letter_words: Optional[int] = None,
+                          roles_with_embeddings: List[List[str]] = [["ARG0", "ARG1", "ARG2"]], embeddings_type: Optional[str] = None,
+                          embeddings_path: Optional[str] = None, n_clusters: List[List[int]] = [[1]], verbose: int = 0,
+                          random_state: int = 0, roles_with_entities: List[str] = ["ARG0", "ARG1", "ARG2"],
+                          ent_labels: List[str] = ["PERSON", "NORP", "ORG", "GPE", "EVENT"], top_n_entities: Optional[int] = None,
+                          dimension_reduce_verbs: Optional[bool] = True, progress_bar: bool = False):
     """
     A wrapper function to build the narrative model from a sample of the corpus.
     Args:
@@ -134,19 +108,11 @@ def build_narrative_model(
     if len(srl_res) != len(sentences):
         raise ValueError("srl_res should be the same length sentences.")
 
-    if (
-        is_subsequence(
-            roles_considered,
-            ["ARG0", "B-V", "B-ARGM-NEG", "B-ARGM-MOD", "ARG1", "ARG2"],
-        )
-        is False
-    ):
+    if is_subsequence(roles_considered, ["ARG0", "B-V", "B-ARGM-NEG", "B-ARGM-MOD", "ARG1", "ARG2"]) is False:
         raise ValueError("Some roles_considered are not supported.")
 
     if is_subsequence(["ARG0", "B-V", "B-ARGM-NEG", "ARG1"], roles_considered) is False:
-        raise ValueError(
-            "Minimum roles to consider: ['ARG0', 'B-V', 'B-ARGM-NEG', 'ARG1']"
-        )
+        raise ValueError("Minimum roles to consider: ['ARG0', 'B-V', 'B-ARGM-NEG', 'ARG1']")
 
     if roles_with_entities is not None:
         if is_subsequence(roles_with_entities, roles_considered) is False:
@@ -155,19 +121,13 @@ def build_narrative_model(
     if roles_with_embeddings is not None:
         for roles in roles_with_embeddings:
             if is_subsequence(roles, roles_considered) is False:
-                raise ValueError(
-                    "each list in roles_with_embeddings should be a subset of roles_considered."
-                )
+                raise ValueError("each list in roles_with_embeddings should be a subset of roles_considered.")
             if ["B-ARGM-NEG", "B-ARGM-MOD", "B-V"] in roles:
-                raise ValueError(
-                    "Negations, verbs and modals cannot be embedded and clustered."
-                )
+                raise ValueError("Negations, verbs and modals cannot be embedded and clustered.")
 
     if roles_with_embeddings is not None:
         if embeddings_type not in ["gensim_keyed_vectors", "gensim_full_model", "USE"]:
-            raise TypeError(
-                "Only three types of embeddings accepted: gensim_keyed_vectors, gensim_full_model, USE"
-            )
+            raise TypeError("Only three types of embeddings accepted: gensim_keyed_vectors, gensim_full_model, USE")
 
     if is_subsequence(ent_labels, ["PERSON", "NORP", "ORG", "GPE", "EVENT"]) is False:
         raise ValueError("Some ent_labels are not supported.")
@@ -198,33 +158,15 @@ def build_narrative_model(
     }
 
     # Process SRL
-    roles, sentence_index = extract_roles(
-        srl_res, used_roles=roles_considered, progress_bar=progress_bar
-    )
+    roles, sentence_index = extract_roles(srl_res, used_roles=roles_considered, progress_bar=progress_bar)
 
-    if (output_path is not None) and os.path.isfile(
-        "%spostproc_roles.json" % output_path
-    ):
+    if (output_path is not None) and os.path.isfile("%spostproc_roles.json" % output_path):
         with open("%spostproc_roles.json" % output_path, "r") as f:
             postproc_roles = json.load(f)
     else:
-        postproc_roles = process_roles(
-            roles,
-            max_length,
-            remove_punctuation,
-            remove_digits,
-            remove_chars,
-            stop_words,
-            lowercase,
-            strip,
-            remove_whitespaces,
-            lemmatize,
-            stem,
-            tags_to_keep,
-            remove_n_letter_words,
-            progress_bar=progress_bar,
-        )
-
+        postproc_roles = process_roles(roles, max_length, remove_punctuation, remove_digits, remove_chars, stop_words,
+                                       lowercase, strip, remove_whitespaces, lemmatize, stem, tags_to_keep,
+                                       remove_n_letter_words, progress_bar=progress_bar)
     if output_path is not None:
         with open("%spostproc_roles.json" % output_path, "w") as f:
             json.dump(postproc_roles, f)
@@ -232,15 +174,11 @@ def build_narrative_model(
     # Verb Counts
     if dimension_reduce_verbs:
 
-        if (output_path is not None) and os.path.isfile(
-            "%sverb_counts.pk" % output_path
-        ):
+        if (output_path is not None) and os.path.isfile("%sverb_counts.pk" % output_path):
             with open(output_path + "verb_counts.pk", "rb") as f:
                 verb_counts = pk.load(f)
         else:
-            verb_counts = count_values(
-                postproc_roles, keys=["B-V"], progress_bar=progress_bar
-            )
+            verb_counts = count_values(postproc_roles, keys=["B-V"], progress_bar=progress_bar)
 
         if output_path is not None:
             with open("%sverb_counts.pk" % output_path, "wb") as f:
@@ -330,31 +268,19 @@ def build_narrative_model(
 
             for num in n_clusters[i]:
 
-                if (output_path is not None) and os.path.isfile(
-                    output_path + "kmeans_%s_%s.pk" % (i, num)
-                ):
+                if (output_path is not None) and os.path.isfile(output_path + "kmeans_%s_%s.pk" % (i, num)):
                     with open(output_path + "kmeans_%s_%s.pk" % (i, num), "rb") as f:
                         kmeans = pk.load(f)
                 else:
-                    kmeans = train_cluster_model(
-                        vecs,
-                        model,
-                        n_clusters=num,
-                        verbose=verbose,
-                        random_state=random_state,
-                    )
+                    kmeans = train_cluster_model(vecs, model, n_clusters=num, verbose=verbose, random_state=random_state)
 
                 if output_path is not None:
                     with open(output_path + "kmeans_%s_%s.pk" % (i, num), "wb") as f:
                         pk.dump(kmeans, f)
 
-                clustering_res = get_clusters(
-                    postproc_roles, model, kmeans, used_roles=roles, suffix=""
-                )
+                clustering_res = get_clusters(postproc_roles, model, kmeans, used_roles=roles, suffix="")
 
-                labels_most_freq = label_clusters_most_freq(
-                    clustering_res=clustering_res, postproc_roles=postproc_roles
-                )
+                labels_most_freq = label_clusters_most_freq(clustering_res=clustering_res, postproc_roles=postproc_roles)
 
                 if isinstance(model, (USE)) is False:
                     labels_most_similar = label_clusters_most_similar(kmeans, model)
@@ -363,9 +289,7 @@ def build_narrative_model(
                 kmeans_list.append(kmeans)
                 labels_most_freq_list.append(labels_most_freq)
 
-            narrative_model["cluster_labels_most_similar"].append(
-                labels_most_similar_list
-            )
+            narrative_model["cluster_labels_most_similar"].append(labels_most_similar_list)
             narrative_model["cluster_model"].append(kmeans_list)
             narrative_model["cluster_labels_most_freq"].append(labels_most_freq_list)
 
@@ -376,16 +300,9 @@ def build_narrative_model(
     return narrative_model
 
 
-def get_narratives(
-    srl_res: List[dict],
-    doc_index: List[int],
-    narrative_model: dict,
-    n_clusters: List[int],  # k means model you want to use
-    output_path: Optional[str] = None,
-    cluster_labeling: Optional[str] = "most_frequent",
-    progress_bar: bool = False,
-):
-
+def get_narratives(srl_res: List[dict], doc_index: List[int], narrative_model: dict, n_clusters: List[int],
+                   output_path: Optional[str] = None, cluster_labeling: Optional[str] = "most_frequent",
+                   progress_bar: bool = False):
     """
     A wrapper function to obtain the final mined narratives.
     Args:
@@ -404,19 +321,11 @@ def get_narratives(
     if cluster_labeling not in ["most_similar", "most_frequent"]:
         raise ValueError("cluster_labeling is either most_similar or most_frequent.")
 
-    if cluster_labeling == "most_similar" and isinstance(
-        narrative_model["embeddings_model"], USE
-    ):
-        raise ValueError(
-            "most_similar option is not implemented for Universal Sentence Encoders. Consider switching to other embedding types."
-        )
+    if cluster_labeling == "most_similar" and isinstance(narrative_model["embeddings_model"], USE):
+        raise ValueError("most_similar option is not implemented for Universal Sentence Encoders. Consider switching to other embedding types.")
 
     # Process SRL
-    roles, sentence_index = extract_roles(
-        srl_res,
-        used_roles=narrative_model["roles_considered"],
-        progress_bar=progress_bar,
-    )
+    roles, sentence_index = extract_roles(srl_res, used_roles=narrative_model["roles_considered"], progress_bar=progress_bar)
 
     postproc_roles = process_roles(
         roles,
