@@ -115,9 +115,8 @@ class SRL:
         return res
 
 
-def extract_roles(
-    srl: List[Dict[str, Any]], used_roles: List[str], progress_bar: bool = False
-) -> Tuple[List[Dict[str, Union[str, bool]]], List[int]]:
+def extract_roles(srl: List[Dict[str, Any]], used_roles: List[str],
+                  progress_bar: bool = False) -> Tuple[List[Dict[str, Union[str, bool]]], List[int]]:
 
     """
     A function that extracts semantic roles from the SRL output.
@@ -257,9 +256,7 @@ def process_roles(
     return roles_copy
 
 
-def rename_arguments(
-    statements: List[dict], progress_bar: bool = False, suffix: str = "_highdim"
-):
+def rename_arguments(statements: List[dict], progress_bar: bool = False, suffix: str = "_highdim"):
 
     """
     Takes a list of dictionaries and renames the keys of the dictionary with an extra user-specified suffix.
