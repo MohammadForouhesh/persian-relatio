@@ -299,7 +299,7 @@ def build_narrative_model(srl_res: List[dict], sentences: List[str],
     return narrative_model
 
 
-def get_narratives(srl_res: List[dict], doc_index: List[int], narrative_model: dict, n_clusters: List[int],
+def get_narratives(srl_res: List[dict], doc_index: List[str], narrative_model: dict, n_clusters: List[int],
                    output_path: Optional[str] = None, cluster_labeling: Optional[str] = "most_frequent",
                    progress_bar: bool = False):
     """
