@@ -1,16 +1,8 @@
-# This is a sample Python script.
+import pandas as pd
 
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
-
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
-
-
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+# df = load_trump_data("raw")
+df = pd.read_excel('/content/drive/MyDrive/Metodata/clf_status_id.xlsx').sample(100000)
+print(df.columns)
+df = df[['status_id', 'text']]
+df = df.rename(columns={'status_id': 'id', 'text': 'doc'})
+print(df.head())
