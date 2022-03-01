@@ -1,8 +1,13 @@
 import pandas as pd
 import numpy as np
 
+from tqdm import tqdm
 
-# df = load_trump_data("raw")
+from src.graphs import build_graph, draw_graph
+from src.preprocess import remove_redundant_characters, remove_emoji
+from src.utils import split_into_sentences
+from src.wrappers import build_narrative_model, run_srl, get_narratives
+
 df = pd.read_excel('clf_status_id.xlsx').sample(100000)
 print(df.columns)
 df = df[['status_id', 'text']]
@@ -62,8 +67,6 @@ print(narrative_model['entities'].most_common()[:20])
 
 # The unnamed entities uncovered in the corpus
 # (automatically labeled by the most frequent phrase in the cluster)
-
-narrative_model['cluster_labels_most_freq']
 
 final_statements = get_narratives(
     srl_res=srl_res,
@@ -154,7 +157,6 @@ indexNames = final_statements[(final_statements['ARG0_lowdim'] == '')|
 
 complete_narratives = final_statements.drop(indexNames)
 
-complete_narratives
 
 # Plot low-dimensional complete narrative statements in a directed multi-graph
 
