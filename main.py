@@ -1,4 +1,6 @@
 import pandas as pd
+import numpy as np
+
 
 # df = load_trump_data("raw")
 df = pd.read_excel('clf_status_id.xlsx').sample(100000)
@@ -51,3 +53,125 @@ narrative_model = build_narrative_model(
     remove_n_letter_words=1,
     progress_bar=True,
 )
+
+print(narrative_model.keys())
+
+# Most common named entities
+
+print(narrative_model['entities'].most_common()[:20])
+
+# The unnamed entities uncovered in the corpus
+# (automatically labeled by the most frequent phrase in the cluster)
+
+narrative_model['cluster_labels_most_freq']
+
+final_statements = get_narratives(
+    srl_res=srl_res,
+    doc_index=split_sentences[0],  # doc names
+    narrative_model=narrative_model,
+    n_clusters=[0],
+    progress_bar=True,
+)
+
+# The resulting pandas dataframe
+
+print(final_statements.columns)
+
+
+# Entity coherence
+# Print most frequent phrases per entity
+
+# Pool ARG0, ARG1 and ARG2 together
+
+df1 = final_statements[['ARG0_lowdim', 'ARG0_highdim']]
+df1.rename(columns={'ARG0_lowdim': 'ARG', 'ARG0_highdim': 'ARG-RAW'}, inplace=True)
+
+df2 = final_statements[['ARG1_lowdim', 'ARG1_highdim']]
+df2.rename(columns={'ARG1_lowdim': 'ARG', 'ARG1_highdim': 'ARG-RAW'}, inplace=True)
+
+df3 = final_statements[['ARG2_lowdim', 'ARG2_highdim']]
+df3.rename(columns={'ARG2_lowdim': 'ARG', 'ARG2_highdim': 'ARG-RAW'}, inplace=True)
+
+df = df1.append(df2).reset_index(drop=True)
+df = df.append(df3).reset_index(drop=True)
+
+# Count semantic phrases
+
+df = df.groupby(['ARG', 'ARG-RAW']).size().reset_index()
+df.columns = ['ARG', 'ARG-RAW', 'count']
+
+# Drop empty semantic phrases
+
+df = df[df['ARG'] != '']
+
+# Rearrange the data
+
+df = df.groupby(['ARG']).apply(lambda x: x.sort_values(["count"], ascending=False))
+df = df.reset_index(drop=True)
+df = df.groupby(['ARG']).head(10)
+
+df['ARG-RAW'] = df['ARG-RAW'] + ' - ' + df['count'].astype(str)
+df['cluster_elements'] = df.groupby(['ARG'])['ARG-RAW'].transform(lambda x: ' | '.join(x))
+
+df = df.drop_duplicates(subset=['ARG'])
+
+df['cluster_elements'] = [', '.join(set(i.split(','))) for i in list(df['cluster_elements'])]
+
+print('Entities to inspect:', len(df))
+
+df = df[['ARG', 'cluster_elements']]
+
+# Low-dimensional vs. high-dimensional narrative statements
+
+# Replace negated verbs by "not-verb"
+
+
+final_statements['B-V_lowdim_with_neg'] = np.where(final_statements['ARG0_lowdim'] == True,
+                                          'not-' + final_statements['B-V_lowdim'],
+                                          final_statements['B-V_lowdim'])
+
+final_statements['B-V_highdim_with_neg'] = np.where(final_statements['ARG0_highdim'] == True,
+                                           'not-' + final_statements['B-V_lowdim'],
+                                           final_statements['B-V_highdim'])
+
+# Concatenate high-dimensional narratives (with text preprocessing but no clustering)
+
+final_statements['narrative_highdim'] = (final_statements['ARG0_highdim'] + ' ' +
+                                         final_statements['B-V_highdim_with_neg'] + ' ' +
+                                         final_statements['ARG1_highdim'])
+
+# Concatenate low-dimensional narratives (with clustering)
+
+final_statements['narrative_lowdim'] = (final_statements['ARG0_lowdim'] + ' ' +
+                                        final_statements['B-V_highdim_with_neg'] + ' ' +
+                                        final_statements['ARG1_lowdim'])
+
+# Focus on narratives with a ARG0-VERB-ARG1 structure (i.e. "complete narratives")
+
+indexNames = final_statements[(final_statements['ARG0_lowdim'] == '')|
+                             (final_statements['ARG1_lowdim'] == '')|
+                             (final_statements['B-V_lowdim_with_neg'] == '')].index
+
+complete_narratives = final_statements.drop(indexNames)
+
+complete_narratives
+
+# Plot low-dimensional complete narrative statements in a directed multi-graph
+
+temp = complete_narratives[["ARG0_lowdim", "ARG1_lowdim", "B-V_lowdim"]]
+temp.columns = ["ARG0", "ARG1", "B-V"]
+temp = temp[(temp["ARG0"] != "") & (temp["ARG1"] != "") & (temp["B-V"] != "")]
+temp = temp.groupby(["ARG0", "ARG1", "B-V"]).size().reset_index(name="weight")
+temp = temp.sort_values(by="weight", ascending=False)#.iloc[
+#     0:100
+# ]  # pick top 100 most frequent narratives
+temp = temp.to_dict(orient="records")
+
+for l in temp:
+    l["color"] = None
+
+G = build_graph(
+    dict_edges=temp, dict_args={}, edge_size=None, node_size=10, prune_network=True
+)
+
+draw_graph(G, notebook=True, output_filename="persian-twitter.html")
