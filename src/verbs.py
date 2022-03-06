@@ -76,12 +76,7 @@ def get_most_frequent(tokens: List[str], token_counts: Counter) -> Optional[str]
     return most_freq_token
 
 
-def clean_verbs(
-    statements: List[dict],
-    verb_counts: Counter,
-    progress_bar: bool = False,
-    suffix: str = "_lowdim",
-) -> List[dict]:
+def clean_verbs(statements: List[dict], verb_counts: Counter, progress_bar: bool = False, suffix: str = "_lowdim") -> List[dict]:
 
     """
     Replace verbs by their most frequent synonym or antonym.
