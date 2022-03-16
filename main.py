@@ -8,7 +8,7 @@ from src.preprocess import remove_redundant_characters, remove_emoji
 from src.utils import split_into_sentences
 from src.wrappers import build_narrative_model, run_srl, get_narratives
 
-df = pd.read_excel('clf_status_id.xlsx').sample(100000)
+df = pd.read_excel('politics.xlsx')
 print(df.columns)
 df = df[['status_id', 'text']]
 df = df.rename(columns={'status_id': 'id', 'text': 'doc'})
@@ -176,4 +176,4 @@ G = build_graph(
     dict_edges=temp, dict_args={}, edge_size=None, node_size=10, prune_network=True
 )
 
-draw_graph(G, notebook=True, output_filename="persian-twitter.html")
+draw_graph(G, output_filename="persian-twitter.html")
