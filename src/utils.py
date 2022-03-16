@@ -7,13 +7,10 @@ from collections import Counter
 from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
-import spacy
 from nltk import pos_tag
 from nltk.corpus import wordnet
 from nltk.stem import SnowballStemmer, WordNetLemmatizer
 from tqdm import tqdm
-
-nlp = spacy.load('xx_ent_wiki_sm')
 
 wnl = WordNetLemmatizer()
 f_lemmatize = wnl.lemmatize
@@ -42,9 +39,8 @@ def split_into_sentences(dataframe: pd.DataFrame, output_path: Optional[str] = N
         docs = tqdm(docs)
 
     for doc in docs:
-        for sent in nlp(doc["doc"], disable=["tagger", "ner"]).sents:
-            sentences.append(str(sent))
-            doc_indices = doc_indices + [doc["id"]]
+        sentences.append(str(doc))
+        doc_indices = doc_indices + [doc["id"]]
 
     if output_path is not None:
         with open(output_path, "w") as f:
