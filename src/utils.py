@@ -7,8 +7,6 @@ from collections import Counter
 from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
-from nltk import pos_tag
-from nltk.corpus import wordnet
 from nltk.stem import SnowballStemmer, WordNetLemmatizer
 from tqdm import tqdm
 from crf_pos.pos_tagger.wapiti import WapitiPosTagger
