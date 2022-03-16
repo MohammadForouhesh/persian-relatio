@@ -11,6 +11,9 @@ from nltk import pos_tag
 from nltk.corpus import wordnet
 from nltk.stem import SnowballStemmer, WordNetLemmatizer
 from tqdm import tqdm
+from crf_pos.pos_tagger.wapiti import WapitiPosTagger
+
+pos_tagger = WapitiPosTagger()
 
 wnl = WordNetLemmatizer()
 f_lemmatize = wnl.lemmatize
@@ -166,55 +169,25 @@ def group_sentences_in_batches(sentences: List[str], max_batch_char_length: Opti
     return batches
 
 
-def _get_wordnet_pos(word):
-    """Get POS tag"""
-    tag = pos_tag([word])[0][1][0].upper()
+def _get_wordnet_pos(text):
+    if len(text.split()) == 0: return 'NULL'
+    tagged_text = pos_tagger[text]
+    for ind in range(len(tagged_text)):
+        yield tagged_text[ind][1]
 
-    return tag
 
-
-def clean_text(sentences: List[str], remove_punctuation: bool = True, remove_digits: bool = True, remove_chars: str = "",
-               stop_words: Optional[List[str]] = None, lowercase: bool = True, strip: bool = True, remove_whitespaces: bool = True,
-               lemmatize: bool = False, stem: bool = False, tags_to_keep: Optional[List[str]] = None, remove_n_letter_words: Optional[int] = None) -> List[str]:
-    """
-    Clean a list of sentences.
-    Args:
-        sentences: list of sentences
-        remove_punctuation: whether to remove string.punctuation
-        remove_digits: whether to remove string.digits
-        remove_chars: remove the given characters
-        stop_words: list of stopwords to remove
-        lowercase: whether to lower the case
-        strip: whether to strip
-        remove_whitespaces: whether to remove superfluous whitespaceing by " ".join(str.split(())
-        lemmatize: whether to lemmatize using nltk.WordNetLemmatizer
-        stem: whether to stem using nltk.SnowballStemmer("english")
-        tags_to_keep: list of grammatical tags to keep (common tags: ['V', 'N', 'J'])
-        remove_n_letter_words: drop words lesser or equal to n letters (default is None)
-    Returns:
-        Processed list of sentences
-    Examples:
-        >>> clean_text([' Return the factorial of n, an  exact integer >= 0.'])
-        ['return the factorial of n an exact integer']
-        >>> clean_text(['Learning is usefull.'])
-        ['learning is usefull']
-        >>> clean_text([' Return the factorial of n, an  exact integer >= 0.'], stop_words=['factorial'])
-        ['return the of n an exact integer']
-        >>> clean_text([' Return the factorial of n, an  exact integer >= 0.'], lemmatize=True)
-        ['return the factorial of n an exact integer']
-        >>> clean_text(['Learning is usefull.'],lemmatize=True)
-        ['learn be usefull']
-        >>> clean_text([' Return the factorial of n, an  exact integer >= 0.'], stem=True)
-        ['return the factori of n an exact integ']
-        >>> clean_text(['Learning is usefull.'],stem=True)
-        ['learn is useful']
-        >>> clean_text(['A1b c\\n\\nde \\t fg\\rkl\\r\\n m+n'])
-        ['ab c de fg kl mn']
-        >>> clean_text(['This is a sentence with verbs and nice adjectives.'], tags_to_keep = ['V', 'J'])
-        ['is nice']
-        >>> clean_text(['This is a sentence with one and two letter words.'], remove_n_letter_words = 2)
-        ['this sentence with one and two letter words']
-    """
+def clean_text(sentences: List[str],
+    remove_punctuation: bool = True,
+    remove_digits: bool = True,
+    remove_chars: str = "",
+    stop_words: Optional[List[str]] = None,
+    lowercase: bool = True,
+    strip: bool = True,
+    remove_whitespaces: bool = True,
+    lemmatize: bool = False,
+    stem: bool = False,
+    tags_to_keep: Optional[List[str]] = None,
+    remove_n_letter_words: Optional[int] = None) -> List[str]:
 
     if lemmatize is True and stem is True:
         raise ValueError("lemmatize and stemming cannot be both True")
@@ -241,37 +214,22 @@ def clean_text(sentences: List[str], remove_punctuation: bool = True, remove_dig
     if lemmatize:
 
         tag_dict = {
-            "J": wordnet.ADJ,
-            "N": wordnet.NOUN,
-            "V": wordnet.VERB,
-            "R": wordnet.ADV,
+            "J": 'ADJ',
+            "N": 'N',
+            "V": 'V',
+            "R": 'ADV',
         }
 
         sentences = [
-            " ".join(
-                [
-                    f_lemmatize(
-                        word, tag_dict.get(_get_wordnet_pos(word), wordnet.NOUN)
-                    )
-                    for word in sent.split()
-                ]
+            " ".join(_get_wordnet_pos(sent)
             )
             for sent in sentences
         ]
 
-    # keep specific nltk tags
-    # this step should be performed before stemming, but may be performed after lemmatization
     if tags_to_keep is not None:
-        sentences = [
-            " ".join(
-                [
-                    word
-                    for word in sent.split()
-                    if _get_wordnet_pos(word) in tags_to_keep
-                ]
-            )
-            for sent in sentences
-        ]
+        sentences = [" ".join([word for ind, word in enumerate(sent.split()) if
+                               list(_get_wordnet_pos(sent))[ind] in tags_to_keep])
+                     for sent in sentences]
 
     # stem
     if stem:
@@ -282,8 +240,6 @@ def clean_text(sentences: List[str], remove_punctuation: bool = True, remove_dig
             " ".join([f_stem(word) for word in sent.split()]) for sent in sentences
         ]
 
-    # drop stopwords
-    # stopwords are dropped after the bulk of preprocessing steps, so they should also be preprocessed with the same standards
     if stop_words is not None:
         sentences = [
             " ".join([word for word in sent.split() if word not in stop_words])
