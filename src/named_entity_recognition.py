@@ -5,16 +5,23 @@ from copy import deepcopy
 from typing import List, Optional, Tuple
 
 import numpy as np
-import spacy
 from tqdm import tqdm
 
 from .utils import clean_text, is_subsequence
+from transformers import AutoTokenizer
+from transformers import TFAutoModelForTokenClassification  # for tensorflow
+from transformers import pipeline
 
-nlp = spacy.load('xx_ent_wiki_sm')
-nlp.add_pipe('senter', source=spacy.load('xx_sent_ud_sm'))
+model_name_or_path = "HooshvareLab/bert-fa-zwnj-base-ner"  # Roberta
+
+tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
+
+model = TFAutoModelForTokenClassification.from_pretrained(model_name_or_path)  # Tensorflow
+
+nlp = pipeline("ner", model=model, tokenizer=tokenizer)
 
 
-def mine_entities(sentences: List[str], ent_labels: Optional[List[str]] = ["PERSON", "NORP", "ORG", "GPE", "EVENT"],
+def mine_entities(sentences: List[str], ent_labels: Optional[List[str]] = ["PER", "FAC", "ORG", "LOC", "EVE", "PRO"],
                   remove_punctuation: bool = True, remove_digits: bool = True, remove_chars: str = "", stop_words: Optional[List[str]] = None,
                   lowercase: bool = True, strip: bool = True, remove_whitespaces: bool = True, lemmatize: bool = False,
                   stem: bool = False, tags_to_keep: Optional[List[str]] = None, remove_n_letter_words: Optional[int] = None,
@@ -41,9 +48,9 @@ def mine_entities(sentences: List[str], ent_labels: Optional[List[str]] = ["PERS
 
     for sentence in sentences:
         sentence = nlp(sentence)
-        for ent in sentence.ents:
-            if ent.label_ in ent_labels:
-                entities_all.append(ent.text)
+        for ent in sentence:
+            if ent['entity'][ent['entity'].find('-')+1:] in ent_labels:
+                entities_all.append(ent['word'])
 
     entities_all = clean_text(entities_all, remove_punctuation, remove_digits, remove_chars, stop_words, lowercase,
                               strip, remove_whitespaces, lemmatize, stem, tags_to_keep, remove_n_letter_words)
