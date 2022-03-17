@@ -8,7 +8,7 @@ from src.preprocess import remove_redundant_characters, remove_emoji
 from src.utils import split_into_sentences
 from src.wrappers import build_narrative_model, run_srl, get_narratives
 
-df = pd.read_excel('politics.xlsx')
+df = pd.read_excel('politics.xlsx').sample(100)
 print(df.columns)
 df = df[['status_id', 'text']]
 df = df.rename(columns={'status_id': 'id', 'text': 'doc'})
@@ -19,12 +19,10 @@ tqdm.pandas()
 
 df.replace('', float('NaN'), inplace=True)
 df.replace(' ', float('NaN'), inplace=True)
-df.doc = df.doc.progress_apply(lambda item: remove_redundant_characters(remove_emoji(item)))
+# df.doc = df.doc.progress_apply(lambda item: remove_redundant_characters(remove_emoji(item)))
 df.dropna(inplace=True)
 
-split_sentences = split_into_sentences(
-    df, progress_bar=True
-)
+split_sentences = split_into_sentences(df, progress_bar=True)
 
 for i in range(5):
     print('Document id: %s' %split_sentences[0][i])
@@ -50,8 +48,8 @@ spacy_stopwords = list(file.read().splitlines())
 narrative_model = build_narrative_model(
     srl_res=srl_res,
     sentences=split_sentences[1],
-    embeddings_type="gensim_keyed_vectors",  # see documentation for a list of supported types
-    embeddings_path="glove-wiki-gigaword-300",
+    embeddings_type="gensim_full_model",  # see documentation for a list of supported types
+    embeddings_path="emb_political_persian.bin",
     n_clusters=[[5]],
     top_n_entities=100,
     stop_words = spacy_stopwords,
