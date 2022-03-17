@@ -47,7 +47,7 @@ def split_into_sentences(dataframe: pd.DataFrame, output_path: Optional[str] = N
         with open(output_path, "w") as f:
             json.dump((doc_indices, sentences), f)
 
-    return doc_indices, sentences[1:]
+    return doc_indices[1:], sentences[1:]
 
 
 def replace_sentences(sentences: List[str], max_sentence_length: Optional[int] = None,
