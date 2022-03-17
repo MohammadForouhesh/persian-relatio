@@ -1,12 +1,12 @@
 requests==2.27.1
-numpy==1.21.2
 nltk==3.7
 tqdm==4.63.0
 networkx==2.7.1
 pyvis==0.1.9
-gensim==3.8.3
+gensim==4.1.2
 pandas==1.4.1
 matplotlib==3.5.1
 sklearn==0.0
 scikit-learn==1.0.2
 transformers==4.17.0
+numpy==1.22.3
