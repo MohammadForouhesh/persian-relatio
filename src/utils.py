@@ -47,7 +47,7 @@ def split_into_sentences(dataframe: pd.DataFrame, output_path: Optional[str] = N
         with open(output_path, "w") as f:
             json.dump((doc_indices, sentences), f)
 
-    return doc_indices, sentences
+    return doc_indices, sentences[1:]
 
 
 def replace_sentences(sentences: List[str], max_sentence_length: Optional[int] = None,
@@ -217,12 +217,6 @@ def clean_text(sentences: List[str],
             "V": 'V',
             "R": 'ADV',
         }
-
-        sentences = [
-            " ".join(_get_wordnet_pos(sent)
-            )
-            for sent in sentences
-        ]
 
     if tags_to_keep is not None:
         sentences = [" ".join([word for ind, word in enumerate(sent.split()) if
