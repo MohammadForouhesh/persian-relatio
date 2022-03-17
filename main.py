@@ -19,7 +19,7 @@ tqdm.pandas()
 
 df.replace('', float('NaN'), inplace=True)
 df.replace(' ', float('NaN'), inplace=True)
-# df.doc = df.doc.progress_apply(lambda item: remove_redundant_characters(remove_emoji(item)))
+df.doc = df.doc.progress_apply(lambda item: remove_redundant_characters(remove_emoji(item)))
 df.dropna(inplace=True)
 
 split_sentences = split_into_sentences(df, progress_bar=True)
