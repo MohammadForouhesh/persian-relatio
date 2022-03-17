@@ -127,7 +127,7 @@ def get_vectors(postproc_roles, model: Union[USE, SIF_word2vec, SIF_keyed_vector
     vecs = []
     for role in role_counts:
         vec = get_vector(role, model)
-        if vec is not None:
+        if vec.shape[1] == 900:
             vecs.append(vec)
 
     vecs = np.concatenate(vecs)
@@ -176,7 +176,7 @@ def get_clusters(postproc_roles: List[dict], model: Union[USE, SIF_word2vec, SIF
         for role, tokens in statement.items():
             if role in used_roles:
                 vec = get_vector(tokens.split(), model)
-                if vec is not None:
+                if vec.shape[1] == 900:
                     clu = kmeans.predict(vec)[0]
                     roles_copy[i][role] = clu
                 else:
