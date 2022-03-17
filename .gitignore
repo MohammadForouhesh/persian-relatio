@@ -5,3 +5,5 @@
 *.xml
 .DS_Store
 *.iml
+*.bin
+*.npy
