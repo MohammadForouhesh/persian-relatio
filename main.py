@@ -7,7 +7,9 @@ from src.graphs import build_graph, draw_graph
 from src.preprocess import remove_redundant_characters, remove_emoji
 from src.utils import split_into_sentences
 from src.wrappers import build_narrative_model, run_srl, get_narratives
+import os
 
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 df = pd.read_excel('politics.xlsx').sample(100)
 print(df.columns)
 df = df[['status_id', 'text']]
