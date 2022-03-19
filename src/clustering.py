@@ -146,7 +146,7 @@ def train_cluster_model(vecs, n_clusters, random_state: Optional[int] = 0, verbo
     :return: A Scikit-learn kmeans model
     """
 
-    kmeans = KMeans(n_clusters=n_clusters, random_state=random_state, verbose=verbose, n_jobs=1).fit(vecs)
+    kmeans = KMeans(n_clusters=n_clusters, random_state=random_state, verbose=verbose).fit(vecs)
 
     return kmeans
 
