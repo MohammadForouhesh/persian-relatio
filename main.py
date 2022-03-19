@@ -2,15 +2,16 @@ import pandas as pd
 import numpy as np
 
 from tqdm import tqdm
-
+from crf_pos.normalization import Normalizer
 from src.graphs import build_graph, draw_graph
 from src.preprocess import remove_redundant_characters, remove_emoji
 from src.utils import split_into_sentences
 from src.wrappers import build_narrative_model, run_srl, get_narratives
 import os
 
+norm = Normalizer()
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
-df = pd.read_excel('politics.xlsx').sample(100)
+df = pd.read_excel('politics.xlsx')
 print(df.columns)
 df = df[['status_id', 'text']]
 df = df.rename(columns={'status_id': 'id', 'text': 'doc'})
@@ -21,6 +22,7 @@ tqdm.pandas()
 
 df.replace('', float('NaN'), inplace=True)
 df.replace(' ', float('NaN'), inplace=True)
+df.doc = df.doc.progress_apply(lambda item: norm.normalize(item))
 df.doc = df.doc.progress_apply(lambda item: remove_redundant_characters(remove_emoji(item)))
 df.dropna(inplace=True)
 
@@ -52,9 +54,9 @@ narrative_model = build_narrative_model(
     sentences=split_sentences[1],
     embeddings_type="gensim_full_model",  # see documentation for a list of supported types
     embeddings_path="emb_political_persian.bin",
-    n_clusters=[[5]],
+    n_clusters=[[18]],
     top_n_entities=100,
-    stop_words = spacy_stopwords,
+    stop_words=spacy_stopwords,
     remove_n_letter_words=1,
     progress_bar=True,
 )
