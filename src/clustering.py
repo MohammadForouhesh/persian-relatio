@@ -177,6 +177,7 @@ def get_clusters(postproc_roles: List[dict], model: Union[USE, SIF_word2vec, SIF
             if role in used_roles:
                 vec = get_vector(tokens.split(), model)
                 if vec.shape[1] == 900:
+                    vec = np.array(vec, dtype=np.double)
                     clu = kmeans.predict(vec)[0]
                     roles_copy[i][role] = clu
                 else:
