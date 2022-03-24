@@ -5,7 +5,7 @@ jobs:
     runs-on: [self-hosted,cml,gpu]
     steps:
       - uses: actions/checkout@v2
-      - name: test-gpu
+      - name: nvidia
         env: 
           repo_token: ${{ secrets.GITHUB_TOKEN }}
         run: |
