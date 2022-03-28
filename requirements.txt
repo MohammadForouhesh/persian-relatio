@@ -9,3 +9,4 @@ matplotlib==3.5.1
 scikit-learn==1.0.2
 transformers==4.17.0
 numpy==1.22.3
+crf-pos==2.1.1
