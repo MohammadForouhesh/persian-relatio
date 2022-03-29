@@ -10,3 +10,6 @@ scikit-learn==1.0.2
 transformers==4.17.0
 numpy==1.22.3
 crf-pos==2.1.1
+torch==1.10.2
+allennlp==2.9.2
+allennlp-models==2.9.0
