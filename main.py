@@ -12,8 +12,8 @@ from src.w2v_emb import W2VEmb, W2VCorpus
 
 norm = Normalizer()
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
-# df = pd.read_excel('normalized_tweets.xlsx').iloc[:300]
-df = pd.read_excel('sample_test.xlsx')
+df = pd.read_excel('normalized_tweets.xlsx').iloc[:10000]
+# df = pd.read_excel('sample_test.xlsx')
 text_array = df.text
 text_array.fillna('', inplace=True)
 # emb = W2VEmb(text_array)
@@ -59,9 +59,9 @@ narrative_model = build_narrative_model(
     sentences=split_sentences[1],
     embeddings_type="gensim_full_model",  # see documentation for a list of supported types
     embeddings_path='w2v_emb.bin',
-    n_clusters=[[100]],
-    top_n_entities=100,
-    stop_words=spacy_stopwords,
+    n_clusters=[[1000]],
+    top_n_entities=1000,
+    # stop_words=spacy_stopwords,
     remove_n_letter_words=1,
     progress_bar=True,
 )
@@ -101,8 +101,7 @@ df2.rename(columns={'ARG1_lowdim': 'ARG', 'ARG1_highdim': 'ARG-RAW'}, inplace=Tr
 df3 = final_statements[['ARG2_lowdim', 'ARG2_highdim']]
 df3.rename(columns={'ARG2_lowdim': 'ARG', 'ARG2_highdim': 'ARG-RAW'}, inplace=True)
 
-df = df1.append(df2).reset_index(drop=True)
-df = df.append(df3).reset_index(drop=True)
+df = pd.concat([df1, df2, df3]).reset_index(drop=True)
 
 # Count semantic phrases
 

@@ -3,6 +3,8 @@ import time
 from collections import Counter
 from copy import deepcopy
 from typing import List, Optional
+import nltk
+nltk.download('omw-1.4')
 
 from nltk.corpus import wordnet
 from tqdm import tqdm
