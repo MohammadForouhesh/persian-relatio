@@ -9,16 +9,16 @@ from tqdm import tqdm
 
 from .utils import clean_text, is_subsequence
 from transformers import AutoTokenizer
-from transformers import TFAutoModelForTokenClassification  # for tensorflow
+from transformers import AutoModelForTokenClassification  # for tensorflow
 from transformers import pipeline
 
 model_name_or_path = "HooshvareLab/bert-fa-zwnj-base-ner"  # Roberta
 
 tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
 
-model = TFAutoModelForTokenClassification.from_pretrained(model_name_or_path)  # Tensorflow
+model = AutoModelForTokenClassification.from_pretrained(model_name_or_path)  # Tensorflow
 
-nlp = pipeline("ner", model=model, tokenizer=tokenizer, device=1)
+nlp = pipeline("ner", model=model, tokenizer=tokenizer, device=0)
 
 
 def mine_entities(sentences: List[str], ent_labels: Optional[List[str]] = ["PER", "FAC", "ORG", "LOC", "EVE", "PRO"],

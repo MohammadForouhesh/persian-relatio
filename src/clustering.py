@@ -102,11 +102,11 @@ def get_vector(tokens: List[str], model: Union[USE, SIF_word2vec, SIF_keyed_vect
     """
 
     if isinstance(model, SIF_word2vec):
-        try:                return np.array([model(tokens)]).reshape(1, -1)
+        try:                return np.array([model(tokens)]).astype('double').reshape(1, -1)
         except KeyError:    return np.array([0 for _ in range(0, model.w2v_model.vector_size)]).reshape(1, -1)
 
     else:   res = np.array([model(tokens)])
-    return res
+    return  res
 
 
 def get_vectors(postproc_roles, model: Union[USE, SIF_word2vec, SIF_keyed_vectors], used_roles=List[str]):
@@ -135,7 +135,7 @@ def get_vectors(postproc_roles, model: Union[USE, SIF_word2vec, SIF_keyed_vector
     return vecs
 
 
-def train_cluster_model(vecs, n_clusters, random_state: Optional[int] = 0, verbose: Optional[int] = 0):
+def train_cluster_model(vecs, n_clusters, random_state: Optional[int] = 0, verbose: Optional[int] = 10):
     """
     Train a kmeans model on the corpus.
 
@@ -177,6 +177,7 @@ def get_clusters(postproc_roles: List[dict], model: Union[USE, SIF_word2vec, SIF
             if role in used_roles:
                 vec = get_vector(tokens.split(), model)
                 if vec.shape[1] == 900:
+                    vec = [float(number) for number in vec]
                     vec = np.array(vec, dtype=np.double)
                     clu = kmeans.predict(vec)[0]
                     roles_copy[i][role] = clu
