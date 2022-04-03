@@ -19,7 +19,7 @@ print(df.head())
 
 tqdm.pandas()
 
-
+## mac version RND
 df.replace('', float('NaN'), inplace=True)
 df.replace(' ', float('NaN'), inplace=True)
 df.doc = df.doc.progress_apply(lambda item: norm.normalize(item))
