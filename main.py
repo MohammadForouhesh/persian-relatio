@@ -11,7 +11,7 @@ import os
 
 norm = Normalizer()
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
-df = pd.read_excel('politics.xlsx')
+df = pd.read_excel('politics.xlsx').sample(1000)
 print(df.columns)
 df = df[['status_id', 'text']]
 df = df.rename(columns={'status_id': 'id', 'text': 'doc'})
@@ -54,7 +54,7 @@ narrative_model = build_narrative_model(
     sentences=split_sentences[1],
     embeddings_type="gensim_full_model",  # see documentation for a list of supported types
     embeddings_path="emb_political_persian.bin",
-    n_clusters=[[18]],
+    n_clusters=[[18], [10]],
     top_n_entities=100,
     stop_words=spacy_stopwords,
     remove_n_letter_words=1,
@@ -74,7 +74,7 @@ final_statements = get_narratives(
     srl_res=srl_res,
     doc_index=split_sentences[0],  # doc names
     narrative_model=narrative_model,
-    n_clusters=[0],
+    n_clusters=[0, 0],
     progress_bar=True,
 )
 
@@ -97,8 +97,7 @@ df2.rename(columns={'ARG1_lowdim': 'ARG', 'ARG1_highdim': 'ARG-RAW'}, inplace=Tr
 df3 = final_statements[['ARG2_lowdim', 'ARG2_highdim']]
 df3.rename(columns={'ARG2_lowdim': 'ARG', 'ARG2_highdim': 'ARG-RAW'}, inplace=True)
 
-df = df1.append(df2).reset_index(drop=True)
-df = df.append(df3).reset_index(drop=True)
+df = pd.concat([df1, df2, df3]).reset_index(drop=True)
 
 # Count semantic phrases
 
