@@ -8,10 +8,15 @@ from src.preprocess import remove_redundant_characters, remove_emoji
 from src.utils import split_into_sentences
 from src.wrappers import build_narrative_model, run_srl, get_narratives
 import os
+from src.utils import formalize
+
+tqdm.pandas()
 
 norm = Normalizer()
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 df = pd.read_excel('politics.xlsx').sample(1000)
+df['text'] = df.text.progress_apply(lambda item: formalize(item))
+df['text'] = df.text.progress_apply(lambda item: norm.normalize(item))
 print(df.columns)
 df = df[['status_id', 'text']]
 df = df.rename(columns={'status_id': 'id', 'text': 'doc'})
