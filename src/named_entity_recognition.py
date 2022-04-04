@@ -18,7 +18,7 @@ tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
 
 model = AutoModelForTokenClassification.from_pretrained(model_name_or_path)  # Tensorflow
 
-nlp = pipeline("ner", model=model, tokenizer=tokenizer, device=0)
+nlp = pipeline("ner", model=model, tokenizer=tokenizer, device=-1)
 
 
 def mine_entities(sentences: List[str], ent_labels: Optional[List[str]] = ["PER", "FAC", "ORG", "LOC", "EVE", "PRO"],
