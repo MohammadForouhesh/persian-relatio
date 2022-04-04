@@ -1,12 +1,8 @@
 import time
-from copy import deepcopy
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union, Generator
 
-import numpy as np
 from tqdm import tqdm
 from crf_pos.pos_tagger import WapitiPosTagger
-
-from src.utils import clean_text
 
 
 class SyntacticDP():
@@ -18,137 +14,86 @@ class SyntacticDP():
         self._max_sentence_length = max_sentence_length
         self._max_number_words = max_number_words
 
-    def __call__(self, sentences: List[str], max_batch_char_length: Optional[int] = None, batch_size: Optional[int] = None,
-                 max_sentence_length: Optional[int] = None, max_number_words: Optional[int] = None, cuda_empty_cache: bool = None,
-                 cuda_sleep: float = None, progress_bar: bool = False):
-
+    def __call__(self, sentences: List[str], progress_bar: bool = False) -> List[Dict[str, Union[str, List[str]]]]:
         if progress_bar:
             print("Running SDP...")
             time.sleep(1)
             sentences = tqdm(sentences)
 
-        return self.batch_tagger(sentences)
+        return list(map(lambda item: sdp2srl_mock(item)[0], list(self.batch_tagger(sentences))))
 
-    def batch_tagger(self, sentences: List[Dict[str, str]]):
+    def batch_tagger(self, sentences: Union[tqdm, List[Dict[str, str]]]) -> Generator[List[tuple], None, None]:
         for sentence in sentences:
             yield self.tagger[sentence]
 
 
-def extract_roles(srl: List[Dict[str, Any]], used_roles: List[str],
-                  progress_bar: bool = False) -> Tuple[List[Dict[str, Union[str, bool]]], List[int]]:
-
-    statements_role_list: List[Dict[str, Union[str, bool]]] = []
-    sentence_index: List[int] = []
-
-    if progress_bar:
-        print("Processing SRL...")
-        time.sleep(1)
-        srl = tqdm(srl)
-
-    for i, sentence_dict in enumerate(srl):
-        role_per_sentence = extract_role_per_sentence(sentence_dict, used_roles)
-        sentence_index.extend([i] * len(role_per_sentence))
-        statements_role_list.extend(role_per_sentence)
-
-    return statements_role_list, np.asarray(sentence_index, dtype=np.uint32)
+def extract_pos_words(pos_tagged: List[Tuple[str, str]], role: str) -> Generator[str, None, None]:
+    for item in pos_tagged:
+        if item[1] == role: yield item[0]
 
 
-def extract_role_per_sentence(sentence_dict: dict, used_roles: List[str]) -> List[Dict[str, Union[str, bool]]]:
-    word_list = sentence_dict["words"]
-    sentence_role_list = []
-
-    for statement_dict in sentence_dict["verbs"]:
-        tag_list = statement_dict["tags"]
-
-        statement_role_dict: Dict[str, Union[str, bool]] = {}
-        for role in ["ARG0", "ARG1", "ARG2", "B-V", "B-ARGM-MOD"]:
-            if role in used_roles:
-                indices_role = [i for i, tok in enumerate(tag_list) if role in tok]
-                toks_role = [
-                    tok for i, tok in enumerate(word_list) if i in indices_role
-                ]
-                statement_role_dict[role] = " ".join(toks_role)
-
-        if "B-ARGM-NEG" in used_roles:
-            role_negation_value = any("B-ARGM-NEG" in tag for tag in tag_list)
-            statement_role_dict["B-ARGM-NEG"] = role_negation_value
-
-        key_to_delete = []
-        for key, value in statement_role_dict.items():
-            if not value:
-                key_to_delete.append(key)
-        for key in key_to_delete:
-            del statement_role_dict[key]
-        sentence_role_list.append(statement_role_dict)
-
-    if not sentence_role_list:
-        sentence_role_list = [{}]
-
-    return sentence_role_list
+def find_pos_index(pos_tagged: List[Tuple[str, str]], role: str) -> int:
+    try:    return [item[1] for item in pos_tagged].index(role)
+    except: return len(pos_tagged)
 
 
-def process_roles(statements: List[Dict[str, List]], max_length: Optional[int] = None, remove_punctuation: bool = True,
-                  remove_digits: bool = True, remove_chars: str = "", stop_words: Optional[List[str]] = None,
-                  lowercase: bool = True, strip: bool = True, remove_whitespaces: bool = True, lemmatize: bool = False,
-                  stem: bool = False, tags_to_keep: Optional[List[str]] = None, remove_n_letter_words: Optional[int] = None,
-                  progress_bar: bool = False) -> List[Dict[str, List]]:
-
-    roles_copy = deepcopy(statements)
-
-    if progress_bar:
-        print("Cleaning SRL...")
-        time.sleep(1)
-        statements = tqdm(statements)
-
-    for i, statement in enumerate(statements):
-        for role, role_content in roles_copy[i].items():
-            if isinstance(role_content, str):
-                res = clean_text(
-                    [role_content],
-                    remove_punctuation=remove_punctuation,
-                    remove_digits=remove_digits,
-                    remove_chars=remove_chars,
-                    stop_words=stop_words,
-                    lowercase=lowercase,
-                    strip=strip,
-                    remove_whitespaces=remove_whitespaces,
-                    lemmatize=lemmatize,
-                    stem=stem,
-                    tags_to_keep=tags_to_keep,
-                    remove_n_letter_words=remove_n_letter_words,
-                )[0]
-                if max_length is not None:
-                    if len(res) <= max_length:
-                        roles_copy[i][role] = res
-                    else:
-                        roles_copy[i][role] = ""
-                else:
-                    roles_copy[i][role] = res
-            elif isinstance(role_content, bool):
-                pass
-            else:
-                raise ValueError(f"{role_content}")
-
-    return roles_copy
+def find_pos_word(pos_tagged: List[Tuple[str, str]], role: str, index: int) -> str:
+    try:    return list(extract_pos_words(pos_tagged, role))[index]
+    except: return ''
 
 
-def rename_arguments(statements: List[dict], progress_bar: bool = False, suffix: str = "_highdim"):
-    roles_copy = deepcopy(statements)
+def pos2srl(pos_tagged: List[Tuple[str, str]]) -> Generator[Tuple[str, str], None, None]:
+    keys = {'PRO': 'ARG0', 'V': 'V', 'N': 'ARG1', 'DET': 'ARG1', 'ADJ': 'ARG2',
+            'NUM': 'ARGM-TMP', 'CON': 'ARGM-TMP', 'ADV': 'ARG2'}
+    verb_ind = find_pos_index(pos_tagged, 'V')
+    for ind, item in enumerate(pos_tagged):
+        if item[1] == 'N' and ind < verb_ind - 3:   yield item[0], 'ARG0'
+        elif item[1] == 'V' and ind > verb_ind:     yield item[0], 'ARG1'
+        else:
+            try:    yield item[0], keys[item[1]]
+            except: yield item[0], 'ARGM-TMP'
 
-    if progress_bar:
-        print("Processing raw arguments...")
-        time.sleep(1)
-        statements = tqdm(statements)
 
-    for i, statement in enumerate(statements):
-        for role, role_content in statement.items():
-            name = role + suffix
-            roles_copy[i][name] = roles_copy[i].pop(role)
-            roles_copy[i][name] = role_content
+def concat_srl(rel_tagged: Generator[Tuple[str, str], None, None]) -> Generator[Tuple[str, str], None, None]:
+    rel_tagged = list(rel_tagged)
+    ind = 0
+    while ind < len(rel_tagged):
+        out_str = rel_tagged[ind][0]
+        j = ind + 1
+        while j < len(rel_tagged):
+            if rel_tagged[j][1] == rel_tagged[ind][1]:  out_str += f' {rel_tagged[j][0]}'
+            else:                                       break
+            j += 1
+        yield rel_tagged[ind][1], out_str
+        ind = j
 
-    return roles_copy
+
+def mock_description(rel_tagged: Generator[Tuple[str, str], None, None]) -> str:
+    return ' '.join([f"[{': '.join(item[::-1])}]" for item in rel_tagged])
+
+
+def mock_tags(rel_tagged: Generator[Tuple[str, str], None, None]) -> Generator[str, None, None]:
+    for item in rel_tagged:
+        yield f'B-{item[0]}'
+        for _ in item[1].split()[1:]:
+            yield f'I-{item[0]}'
+
+
+def sdp2srl_mock(pos_tagged: List[Tuple[str, str]]) -> List[Dict[str, Union[str, List[str]]]]:
+    return [{'verbs': [{'verb': find_pos_word(pos_tagged, 'V', 0),
+                        'description': mock_description(concat_srl(pos2srl(pos_tagged))),
+                        'tags': list(mock_tags(concat_srl(pos2srl(pos_tagged))))}],
+             'words': [item[0] for item in pos_tagged]}]
 
 
 if __name__ == '__main__':
     sdp = SyntacticDP()
-    print(list(sdp(sentences=['من میخواهم این فریمورک کار کند'])))
+    pos = [('خدا', 'N'), ('میخواهد', 'V'), ('این', 'DET'), ('فریمورک', 'N'), ('کار', 'N'), ('کند', 'V')]
+    print(sdp2srl_mock(pos))
+    print(sdp(['من به مدرسه میروم', 'به گزارش افق پیشبینی حاکی از افت سهام نیویورک است']))
+    pos = sdp(['به گزارش افق پیشبینی حاکی از افت سهام نیویورک است'])
+    print(pos)
+
+    real_world_test_case = "شکست خوردن هفتمین دور مذاکرات وین پس از توقف شش ماهه"
+    pos = sdp([real_world_test_case])
+    print(pos)
