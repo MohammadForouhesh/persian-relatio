@@ -8,24 +8,23 @@ from src.preprocess import remove_redundant_characters, remove_emoji
 from src.utils import split_into_sentences
 from src.wrappers import build_narrative_model, run_srl, get_narratives
 import os
-from src.w2v_emb import W2VEmb, W2VCorpus
+from src.utils import formalize
+
+tqdm.pandas()
 
 norm = Normalizer()
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
-df = pd.read_excel('normalized_tweets.xlsx').iloc[:10000]
-# df = pd.read_excel('sample_test.xlsx')
-text_array = df.text
-text_array.fillna('', inplace=True)
-# emb = W2VEmb(text_array)
-# print('... creating w2v model')
-# emb.w2v_model.save('w2v_emb.bin')
-# print('w2v created')
+df = pd.read_excel('politics.xlsx').sample(100)
+df['text'] = df.text.progress_apply(lambda item: formalize(item))
+df['text'] = df.text.progress_apply(lambda item: norm.normalize(item))
 print(df.columns)
 df = df[['status_id', 'text']]
 df = df.rename(columns={'status_id': 'id', 'text': 'doc'})
 print(df.head())
 
 tqdm.pandas()
+
+## mac version RND
 
 df.replace('', float('NaN'), inplace=True)
 df.replace(' ', float('NaN'), inplace=True)
@@ -56,11 +55,12 @@ narrative_model = build_narrative_model(
     srl_res=srl_res,
     sentences=split_sentences[1],
     embeddings_type="gensim_full_model",  # see documentation for a list of supported types
-    embeddings_path='w2v_emb.bin',
-    n_clusters=[[1000]],
-    # top_n_entities=10000,
-    # stop_words=spacy_stopwords,
-    remove_n_letter_words=3,
+
+    embeddings_path="emb_political_persian.bin",
+    n_clusters=[[3], [2]],
+    top_n_entities=100,
+    stop_words=spacy_stopwords,
+    remove_n_letter_words=1,
     progress_bar=True,
 )
 
@@ -77,7 +77,7 @@ final_statements = get_narratives(
     srl_res=srl_res,
     doc_index=split_sentences[0],  # doc names
     narrative_model=narrative_model,
-    n_clusters=[0],
+    n_clusters=[0, 0],
     progress_bar=True,
 )
 

@@ -14,7 +14,7 @@ from allennlp_models.structured_prediction.predictors import (
 )
 from tqdm import tqdm
 
-from .utils import clean_text, group_sentences_in_batches, replace_sentences
+from src.utils import clean_text, group_sentences_in_batches, replace_sentences
 
 
 class SRL:
@@ -67,12 +67,9 @@ class SRL:
                 res_batch = self._predictor.predict_batch_json(sentences_json)
             except RuntimeError as err:
                 warnings.warn(f"empty result {err}", RuntimeWarning)
-                res = [{"words": [], "verbs": []}] * len(batch)
-                break
-            except:
-                raise
-            finally:
-                self._clean_cache(cuda_sleep, cuda_empty_cache)
+                res_batch = [{"words": [], "verbs": []}] * len(batch)
+            except:     raise
+            finally:    self._clean_cache(cuda_sleep, cuda_empty_cache)
 
             res.extend(res_batch)
         return res
@@ -232,3 +229,8 @@ def rename_arguments(statements: List[dict], progress_bar: bool = False, suffix:
             roles_copy[i][name] = role_content
 
     return roles_copy
+
+
+if __name__ == '__main__':
+    srl = SRL(path="https://storage.googleapis.com/allennlp-public-models/openie-model.2020.03.26.tar.gz")
+    print(srl(sentences=['and I always want this god forsaken framework to work', 'and now I will test']))

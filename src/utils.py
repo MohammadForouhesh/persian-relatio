@@ -7,6 +7,7 @@ from collections import Counter
 from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
+from hazm import InformalNormalizer
 from nltk.stem import SnowballStemmer, WordNetLemmatizer
 from tqdm import tqdm
 from crf_pos.pos_tagger.wapiti import WapitiPosTagger
@@ -15,6 +16,7 @@ pos_tagger = WapitiPosTagger()
 
 wnl = WordNetLemmatizer()
 f_lemmatize = wnl.lemmatize
+formalizer = InformalNormalizer()
 
 
 def split_into_sentences(dataframe: pd.DataFrame, output_path: Optional[str] = None,
@@ -40,7 +42,8 @@ def split_into_sentences(dataframe: pd.DataFrame, output_path: Optional[str] = N
         docs = tqdm(docs)
 
     for doc in docs:
-        sentences.append(str(doc))
+        if len(doc['doc']) < 2: continue
+        sentences.append(str(doc['doc']))
         doc_indices = doc_indices + [doc["id"]]
 
     if output_path is not None:
@@ -332,3 +335,8 @@ def count_words(sentences: List[str]) -> Counter:
     words_counter = Counter(words)
 
     return words_counter
+
+
+def formalize(sentence: str) -> str:
+    formal = formalizer.normalize(sentence)
+    return ' '.join([formal[0][_][0] for _ in range(len(formal[0]))])
