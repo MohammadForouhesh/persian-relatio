@@ -14,7 +14,7 @@ tqdm.pandas()
 
 norm = Normalizer()
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
-df = pd.read_excel('politics.xlsx').sample(1000)
+df = pd.read_excel('politics.xlsx').sample(100)
 df['text'] = df.text.progress_apply(lambda item: formalize(item))
 df['text'] = df.text.progress_apply(lambda item: norm.normalize(item))
 print(df.columns)
@@ -59,7 +59,7 @@ narrative_model = build_narrative_model(
     sentences=split_sentences[1],
     embeddings_type="gensim_full_model",  # see documentation for a list of supported types
     embeddings_path="emb_political_persian.bin",
-    n_clusters=[[18], [10]],
+    n_clusters=[[3], [2]],
     top_n_entities=100,
     stop_words=spacy_stopwords,
     remove_n_letter_words=1,
