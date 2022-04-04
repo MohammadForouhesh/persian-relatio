@@ -233,4 +233,4 @@ def rename_arguments(statements: List[dict], progress_bar: bool = False, suffix:
 
 if __name__ == '__main__':
     srl = SRL(path="https://storage.googleapis.com/allennlp-public-models/openie-model.2020.03.26.tar.gz")
-    print(srl(sentences=['I want this framework to work']))
+    print(srl(sentences=['and I always want this god forsaken framework to work', 'and now I will test']))
