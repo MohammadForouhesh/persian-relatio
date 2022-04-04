@@ -1,3 +1,9 @@
 
 *.xlsx
 *.pyc
+*.pkl
+*.xml
+.DS_Store
+*.iml
+*.bin
+*.npy

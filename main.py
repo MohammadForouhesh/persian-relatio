@@ -2,13 +2,21 @@ import pandas as pd
 import numpy as np
 
 from tqdm import tqdm
-
+from crf_pos.normalization import Normalizer
 from src.graphs import build_graph, draw_graph
 from src.preprocess import remove_redundant_characters, remove_emoji
 from src.utils import split_into_sentences
 from src.wrappers import build_narrative_model, run_srl, get_narratives
+import os
+from src.utils import formalize
 
-df = pd.read_excel('politics.xlsx')
+tqdm.pandas()
+
+norm = Normalizer()
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+df = pd.read_excel('politics.xlsx').sample(100)
+df['text'] = df.text.progress_apply(lambda item: formalize(item))
+df['text'] = df.text.progress_apply(lambda item: norm.normalize(item))
 print(df.columns)
 df = df[['status_id', 'text']]
 df = df.rename(columns={'status_id': 'id', 'text': 'doc'})
@@ -16,15 +24,14 @@ print(df.head())
 
 tqdm.pandas()
 
-
+## mac version RND
 df.replace('', float('NaN'), inplace=True)
 df.replace(' ', float('NaN'), inplace=True)
+df.doc = df.doc.progress_apply(lambda item: norm.normalize(item))
 df.doc = df.doc.progress_apply(lambda item: remove_redundant_characters(remove_emoji(item)))
 df.dropna(inplace=True)
 
-split_sentences = split_into_sentences(
-    df, progress_bar=True
-)
+split_sentences = split_into_sentences(df, progress_bar=True)
 
 for i in range(5):
     print('Document id: %s' %split_sentences[0][i])
@@ -50,11 +57,11 @@ spacy_stopwords = list(file.read().splitlines())
 narrative_model = build_narrative_model(
     srl_res=srl_res,
     sentences=split_sentences[1],
-    embeddings_type="gensim_keyed_vectors",  # see documentation for a list of supported types
-    embeddings_path="glove-wiki-gigaword-300",
-    n_clusters=[[10]],
+    embeddings_type="gensim_full_model",  # see documentation for a list of supported types
+    embeddings_path="emb_political_persian.bin",
+    n_clusters=[[3], [2]],
     top_n_entities=100,
-    stop_words = spacy_stopwords,
+    stop_words=spacy_stopwords,
     remove_n_letter_words=1,
     progress_bar=True,
 )
@@ -72,7 +79,7 @@ final_statements = get_narratives(
     srl_res=srl_res,
     doc_index=split_sentences[0],  # doc names
     narrative_model=narrative_model,
-    n_clusters=[0],
+    n_clusters=[0, 0],
     progress_bar=True,
 )
 
@@ -95,8 +102,7 @@ df2.rename(columns={'ARG1_lowdim': 'ARG', 'ARG1_highdim': 'ARG-RAW'}, inplace=Tr
 df3 = final_statements[['ARG2_lowdim', 'ARG2_highdim']]
 df3.rename(columns={'ARG2_lowdim': 'ARG', 'ARG2_highdim': 'ARG-RAW'}, inplace=True)
 
-df = df1.append(df2).reset_index(drop=True)
-df = df.append(df3).reset_index(drop=True)
+df = pd.concat([df1, df2, df3]).reset_index(drop=True)
 
 # Count semantic phrases
 

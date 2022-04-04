@@ -1,3 +1,4 @@
+import pickle
 import time
 import warnings
 import numpy as np
@@ -51,23 +52,27 @@ class SIF_word2vec:
     For basic code snippets and additional details: https://radimrehurek.com/gensim/models/word2vec.html
     """
 
-    def __init__(self, path: str, sentences=List[str], alpha: Optional[float] = 0.001, normalize: bool = True):
-        self._model = self._load_keyed_vectors(path)
+    def __init__(self, path: str, sentences: List[str], alpha: Optional[float] = 0.001, normalize: bool = True):
+        self.w2v_model: Word2Vec = self._load_keyed_vectors(path)
         self._words_counter = count_words(sentences)
         self._sif_dict = compute_sif_weights(self._words_counter, alpha)
-        self._vocab = self._model.vocab
         self._normalize = normalize
 
     def _load_keyed_vectors(self, path):
-        return Word2Vec.load(path).wv
+        """
+        A tool to load w2v model from disk.
+        :param path:   Model path.
+        :return:       None
+        """
+        return Word2Vec.load(path)
 
     def __call__(self, tokens: List[str]):
-        res = np.mean([self._sif_dict[token] * self._model[token] for token in tokens], axis=0)
+        res = np.mean([self._sif_dict[token] * self.w2v_model.wv[token] for token in tokens], axis=0)
         if self._normalize: res = res / norm(res)
         return res
 
     def most_similar(self, v):
-        return self._model.most_similar(positive=[v], topn=1)[0]
+        return self.w2v_model.wv.most_similar(positive=[v], topn=1)[0]
 
 
 class SIF_keyed_vectors(SIF_word2vec):
@@ -96,14 +101,10 @@ def get_vector(tokens: List[str], model: Union[USE, SIF_word2vec, SIF_keyed_vect
     :return: A two-dimensional numpy array (1, dimension of the embedding space)
     """
 
-    if not isinstance(model, (USE, SIF_word2vec, SIF_keyed_vectors)):
-        raise TypeError("Union[USE, SIF_Word2Vec, SIF_keyed_vectors]")
+    if isinstance(model, SIF_word2vec):
+        try:                return np.array([model(tokens)]).reshape(1, -1)
+        except KeyError:    return np.array([0 for _ in range(0, model.w2v_model.vector_size)]).reshape(1, -1)
 
-    if isinstance(model, SIF_word2vec) or isinstance(model, SIF_keyed_vectors):
-        if not tokens:                                              res = None
-        elif any(token not in model._sif_dict for token in tokens): res = None
-        elif any(token not in model._vocab for token in tokens):    res = None
-        else:                                                       res = np.array([model(tokens)])
     else:   res = np.array([model(tokens)])
     return res
 
@@ -126,7 +127,7 @@ def get_vectors(postproc_roles, model: Union[USE, SIF_word2vec, SIF_keyed_vector
     vecs = []
     for role in role_counts:
         vec = get_vector(role, model)
-        if vec is not None:
+        if vec.shape[1] == 900:
             vecs.append(vec)
 
     vecs = np.concatenate(vecs)
@@ -175,7 +176,8 @@ def get_clusters(postproc_roles: List[dict], model: Union[USE, SIF_word2vec, SIF
         for role, tokens in statement.items():
             if role in used_roles:
                 vec = get_vector(tokens.split(), model)
-                if vec is not None:
+                if vec.shape[1] == 900:
+                    vec = np.array(vec, dtype=np.double)
                     clu = kmeans.predict(vec)[0]
                     roles_copy[i][role] = clu
                 else:

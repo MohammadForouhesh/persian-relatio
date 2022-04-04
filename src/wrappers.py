@@ -19,6 +19,7 @@ from .clustering import (
 )
 from .named_entity_recognition import map_entities, mine_entities
 from .semantic_role_labeling import SRL, extract_roles, process_roles, rename_arguments
+from .syntactic_role_labeling import SyntacticDP
 from .utils import clean_text, count_values, is_subsequence
 from .verbs import clean_verbs
 
@@ -51,22 +52,14 @@ def run_srl(
         A list of dictionaries with the SRL output
     """
 
-    srl = SRL(path=path, cuda_device=cuda_device)
-
-    srl_res = srl(
-        sentences=sentences,
-        batch_size=batch_size,
-        max_batch_char_length=max_batch_char_length,
-        max_sentence_length=max_sentence_length,
-        max_number_words=max_number_words,
-        progress_bar=progress_bar,
-    )
+    sdp = SyntacticDP()
+    sdp_res = sdp(sentences=sentences)
 
     if output_path is not None:
         with open(output_path, "w") as json_file:
-            json.dump(srl_res, json_file)
+            json.dump(sdp_res, json_file)
 
-    return srl_res
+    return sdp_res
 
 
 def build_narrative_model(srl_res: List[dict], sentences: List[str],
