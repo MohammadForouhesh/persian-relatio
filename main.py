@@ -13,8 +13,8 @@ from src.utils import formalize
 tqdm.pandas()
 
 norm = Normalizer()
-# os.environ["TOKENIZERS_PARALLELISM"] = "false"
-df = pd.read_excel('normalized_tweets.xlsx').sample(10000)
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+df = pd.read_excel('politics.xlsx').sample(1000)
 df['text'] = df.text.progress_apply(lambda item: formalize(item))
 df['text'] = df.text.progress_apply(lambda item: norm.normalize(item))
 print(df.columns)
@@ -56,11 +56,11 @@ narrative_model = build_narrative_model(
     sentences=split_sentences[1],
     embeddings_type="gensim_full_model",  # see documentation for a list of supported types
 
-    embeddings_path="w2v_emb.bin",
+    embeddings_path="emb_political_persian.bin",
     n_clusters=[[1000], [500]],
     top_n_entities=1000,
     stop_words=spacy_stopwords,
-    remove_n_letter_words=3,
+    remove_n_letter_words=1,
     progress_bar=True,
 )
 
