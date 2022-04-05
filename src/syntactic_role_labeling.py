@@ -74,10 +74,13 @@ def mock_description(rel_tagged: List[Tuple[str, str]]) -> str:
 
 def mock_tags(rel_tagged: List[Tuple[str, str]]) -> Generator[str, None, None]:
     for item in rel_tagged:
-        yield f'B-{item[0]}'
-        for _ in item[1].split()[1:]:
-            if item[0] != 'V':  yield f'I-{item[0]}'
-            else:               yield f'B-{item[0]}'
+        if item[0] == '':       yield 'O'
+        else:
+            yield f'B-{item[0]}'
+            for _ in item[1].split()[1:]:
+                if item[0] == '':       yield 'O'
+                elif item[0] != 'V':    yield f'I-{item[0]}'
+                else:                   yield f'B-{item[0]}'
 
 
 def sdp2srl_mock(pos_tagged: List[Tuple[str, str]]) -> List[Dict[str, Union[str, List[str]]]]:
@@ -98,7 +101,7 @@ if __name__ == '__main__':
     pos = sdp(['به گزارش افق پیشبینی حاکی از افت سهام نیویورک است'])
     print(pos)
 
-    real_world_test_case = "اسب تازی بخوبی از پس همه‌ تست ها بر می اید"
+    real_world_test_case = "دانشجویان کمک دانشجویان باشید قبال روابط ایران چین حمایت دانشجویان خاهش می کند"
     print(tagger[real_world_test_case])
     pos = sdp([real_world_test_case])
     print(pos)
