@@ -47,8 +47,8 @@ def pos2srl(pos_tagged: List[Tuple[str, str]]) -> Generator[Tuple[str, str], Non
             'NUM': 'ARGM-TMP', 'CON': 'ARGM-TMP', 'ADV': 'ARG2'}
     verb_ind = find_pos_index(pos_tagged, 'V')
     for ind, item in enumerate(pos_tagged):
-        if item[1] == 'N' and ind < verb_ind - 3:   yield item[0], 'ARG0'
-        elif item[1] == 'V' and ind > verb_ind:     yield item[0], 'ARG1'
+        if item[1] == 'N' and ind < verb_ind-3:     yield item[0], 'ARG0'
+        elif item[1] == 'V' and ind > verb_ind+1:   yield item[0], 'ARG1'
         else:
             try:    yield item[0], keys[item[1]]
             except: yield item[0], 'ARGM-TMP'
@@ -88,8 +88,8 @@ def sdp2srl_mock(pos_tagged: List[Tuple[str, str]]) -> List[Dict[str, Union[str,
 
 if __name__ == '__main__':
     sdp = SyntacticDP()
-    pos = [('خدا', 'N'), ('میخواهد', 'V'), ('این', 'DET'), ('فریمورک', 'N'), ('کار', 'N'), ('کند', 'V')]
-    print(sdp2srl_mock(pos))
+    pos = sdp(['به خواست خدا این فریمورک کار میکند'])
+    print(pos)
     print(sdp(['من به مدرسه میروم', 'به گزارش افق پیشبینی حاکی از افت سهام نیویورک است']))
     pos = sdp(['به گزارش افق پیشبینی حاکی از افت سهام نیویورک است'])
     print(pos)
