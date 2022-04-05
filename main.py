@@ -57,8 +57,8 @@ narrative_model = build_narrative_model(
     embeddings_type="gensim_full_model",  # see documentation for a list of supported types
 
     embeddings_path="emb_political_persian.bin",
-    n_clusters=[[1000], [500]],
-    top_n_entities=1000,
+    n_clusters=[[800], [500]],
+    top_n_entities=800,
     stop_words=spacy_stopwords,
     remove_n_letter_words=1,
     progress_bar=True,
@@ -166,7 +166,7 @@ temp = complete_narratives[["ARG0_lowdim", "ARG1_lowdim", "B-V_lowdim"]]
 temp.columns = ["ARG0", "ARG1", "B-V"]
 temp = temp[(temp["ARG0"] != "") & (temp["ARG1"] != "") & (temp["B-V"] != "")]
 temp = temp.groupby(["ARG0", "ARG1", "B-V"]).size().reset_index(name="weight")
-temp = temp.sort_values(by="weight", ascending=False).iloc[0:300]  # pick top 100 most frequent narratives
+temp = temp.sort_values(by="weight", ascending=False).iloc[0:100]  # pick top 100 most frequent narratives
 temp = temp.to_dict(orient="records")
 
 for l in temp:
