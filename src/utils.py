@@ -43,7 +43,7 @@ def split_into_sentences(dataframe: pd.DataFrame, output_path: Optional[str] = N
 
     for doc in docs:
         if len(doc['doc']) < 2: continue
-        sentences.append(str(doc['doc']))
+        sentences.append(str(doc['doc'])[:50])
         doc_indices = doc_indices + [doc["id"]]
 
     if output_path is not None:
