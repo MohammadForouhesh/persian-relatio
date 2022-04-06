@@ -44,11 +44,13 @@ def find_pos_word(pos_tagged: List[Tuple[str, str]], role: str, index: int) -> s
 
 def pos2srl(pos_tagged: List[Tuple[str, str]]) -> Generator[Tuple[str, str], None, None]:
     keys = {'PRO': 'ARG0', 'V': 'V', 'N': 'ARG1', 'ADJ': 'ARG2',
-            'NUM': '', 'CON': '', 'ADV': ''}
+            'NUM': '', 'CON': '', 'ADV': 'ARG2'}
     verb_ind = find_pos_index(pos_tagged, 'V')
+    clit_ind = find_pos_index(pos_tagged, 'CLITIC')
     for ind, item in enumerate(pos_tagged):
         if item[1] == 'N' and ind < verb_ind-3:     yield item[0], 'ARG0'
-        elif item[1] == 'V' and ind > verb_ind+1:   yield item[0], 'ARG1'
+        elif item[1] == 'N' and ind == clit_ind-1:  yield item[0], 'ARG1'
+        elif item[1] == 'N' and ind >= verb_ind+2:  yield item[0], 'ARG1'
         else:
             try:    yield item[0], keys[item[1]]
             except: yield item[0], ''
