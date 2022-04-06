@@ -6,7 +6,7 @@ from crf_pos.normalization import Normalizer
 from src.graphs import build_graph, draw_graph
 from src.preprocess import remove_redundant_characters, remove_emoji
 from src.utils import split_into_sentences
-from src.wrappers import build_narrative_model, run_srl, get_narratives
+from src.wrappers import build_narrative_model, run_sdp, get_narratives
 import os
 from src.utils import formalize
 
@@ -14,12 +14,9 @@ tqdm.pandas()
 
 norm = Normalizer()
 # os.environ["TOKENIZERS_PARALLELISM"] = "false"
-df = pd.read_excel('normalized_tweets.xlsx').sample(15000)
-df.dropna(inplace=True)
+df = pd.read_excel('politics.xlsx').sample(1000)
 df['text'] = df.text.progress_apply(lambda item: formalize(item))
-df.dropna(inplace=True)
 df['text'] = df.text.progress_apply(lambda item: norm.normalize(item))
-df.dropna(inplace=True)
 print(df.columns)
 df = df[['status_id', 'text']]
 df = df.rename(columns={'status_id': 'id', 'text': 'doc'})
@@ -29,10 +26,11 @@ tqdm.pandas()
 
 ## mac version RND
 
-df.replace('', float('NaN'), inplace=True)
-df.replace(' ', float('NaN'), inplace=True)
 df.doc = df.doc.progress_apply(lambda item: norm.normalize(item))
 df.doc = df.doc.progress_apply(lambda item: remove_redundant_characters(remove_emoji(item)))
+
+df.replace('', float('NaN'), inplace=True)
+df.replace(' ', float('NaN'), inplace=True)
 df.dropna(inplace=True)
 
 split_sentences = split_into_sentences(df, progress_bar=True)
@@ -44,12 +42,11 @@ for i in range(5):
 # Note that SRL is time-consuming, in particular on CPUs.
 # To speed up the annotation, you can also use GPUs via the "cuda_device" argument of the "run_srl()" function.
 
-srl_res = run_srl(
-    path="https://storage.googleapis.com/allennlp-public-models/openie-model.2020.03.26.tar.gz",  # pre-trained model
-    sentences=split_sentences[1],
-    cuda_device=0,
-    progress_bar=True,
-)
+df.replace('', float('NaN'), inplace=True)
+df.replace(' ', float('NaN'), inplace=True)
+df.dropna(inplace=True)
+
+srl_res = run_sdp(split_sentences[1])
 
 file = open('persian.txt', 'r')
 spacy_stopwords = list(file.read().splitlines())
@@ -58,10 +55,9 @@ narrative_model = build_narrative_model(
     srl_res=srl_res,
     sentences=split_sentences[1],
     embeddings_type="gensim_full_model",  # see documentation for a list of supported types
-
-    embeddings_path="w2v_emb.bin",
-    n_clusters=[[4000], [3000]],
-    top_n_entities=4000,
+    embeddings_path="emb_political_persian.bin",
+    n_clusters=[[100], [100]],
+    top_n_entities=50,
     stop_words=spacy_stopwords,
     remove_n_letter_words=2,
     progress_bar=True,
