@@ -14,12 +14,13 @@ tqdm.pandas()
 
 norm = Normalizer()
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
-df = pd.read_excel('politics.xlsx').sample(1000)
+df = pd.read_csv('khabaronline.csv')#.sample(1000)
+print(df.columns)
 df['text'] = df.text.progress_apply(lambda item: formalize(item))
 df['text'] = df.text.progress_apply(lambda item: norm.normalize(item))
 print(df.columns)
-df = df[['status_id', 'text']]
-df = df.rename(columns={'status_id': 'id', 'text': 'doc'})
+df = df[['id', 'text']]
+df = df.rename(columns={'id': 'id', 'text': 'doc'})
 print(df.head())
 
 tqdm.pandas()
@@ -56,7 +57,7 @@ narrative_model = build_narrative_model(
     sentences=split_sentences[1],
     embeddings_type="gensim_full_model",  # see documentation for a list of supported types
     embeddings_path="emb_political_persian.bin",
-    n_clusters=[[100], [100]],
+    n_clusters=[[40], [50]],
     top_n_entities=50,
     stop_words=spacy_stopwords,
     remove_n_letter_words=2,
@@ -164,16 +165,16 @@ complete_narratives.to_excel('complete_narratives.xlsx')
 
 temp = complete_narratives[["ARG0_lowdim", "ARG1_lowdim", "B-V_lowdim"]]
 temp.columns = ["ARG0", "ARG1", "B-V"]
-temp = temp[(temp["ARG0"] != "") & (temp["ARG1"] != "") & (temp["B-V"] != "")]
+temp = temp[(temp["ARG0"] != "") & (temp["ARG1"] != "") & (temp["B-V"] != "") & (temp['ARG0'] != temp['ARG1'])]
 temp = temp.groupby(["ARG0", "ARG1", "B-V"]).size().reset_index(name="weight")
-temp = temp.sort_values(by="weight", ascending=False).iloc[0:50]  # pick top 100 most frequent narratives
+temp = temp.sort_values(by="weight", ascending=False).iloc[0:20]  # pick top 100 most frequent narratives
 temp = temp.to_dict(orient="records")
 
 for l in temp:
     l["color"] = None
 
 G = build_graph(
-    dict_edges=temp, dict_args={}, edge_size=None, node_size=3, prune_network=True
+    dict_edges=temp, dict_args={}, edge_size=None, node_size=10, prune_network=True
 )
 
 draw_graph(G, output_filename="persian-twitter.html")
