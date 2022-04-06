@@ -4,7 +4,7 @@ import numpy as np
 from tqdm import tqdm
 from crf_pos.normalization import Normalizer
 from src.graphs import build_graph, draw_graph
-from src.preprocess import remove_redundant_characters, remove_emoji
+from src.preprocess import remove_redundant_characters, remove_emoji, remove_sw
 from src.utils import split_into_sentences
 from src.wrappers import build_narrative_model, run_sdp, get_narratives
 import os
@@ -13,7 +13,7 @@ from src.utils import formalize
 tqdm.pandas()
 
 norm = Normalizer()
-# os.environ["TOKENIZERS_PARALLELISM"] = "false"
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 df = pd.read_excel('politics.xlsx').sample(1000)
 df['text'] = df.text.progress_apply(lambda item: formalize(item))
 df['text'] = df.text.progress_apply(lambda item: norm.normalize(item))
@@ -130,7 +130,6 @@ df = df[['ARG', 'cluster_elements']]
 
 # Replace negated verbs by "not-verb"
 
-
 final_statements['B-V_lowdim_with_neg'] = np.where(final_statements['ARG0_lowdim'] == True,
                                                    'not-' + final_statements['B-V_lowdim'],
                                                    final_statements['B-V_lowdim'])
@@ -158,21 +157,23 @@ indexNames = final_statements[(final_statements['ARG0_lowdim'] == '') |
                               (final_statements['B-V_lowdim'] == '')].index
 
 complete_narratives = final_statements.drop(indexNames)
+complete_narratives = complete_narratives.applymap(lambda item: remove_sw(spacy_stopwords, item))
 complete_narratives.to_excel('complete_narratives.xlsx')
+
 # Plot low-dimensional complete narrative statements in a directed multi-graph
 
 temp = complete_narratives[["ARG0_lowdim", "ARG1_lowdim", "B-V_lowdim"]]
 temp.columns = ["ARG0", "ARG1", "B-V"]
 temp = temp[(temp["ARG0"] != "") & (temp["ARG1"] != "") & (temp["B-V"] != "")]
 temp = temp.groupby(["ARG0", "ARG1", "B-V"]).size().reset_index(name="weight")
-temp = temp.sort_values(by="weight", ascending=False).iloc[0:100]  # pick top 100 most frequent narratives
+temp = temp.sort_values(by="weight", ascending=False).iloc[0:50]  # pick top 100 most frequent narratives
 temp = temp.to_dict(orient="records")
 
 for l in temp:
     l["color"] = None
 
 G = build_graph(
-    dict_edges=temp, dict_args={}, edge_size=None, node_size=10, prune_network=True
+    dict_edges=temp, dict_args={}, edge_size=None, node_size=3, prune_network=True
 )
 
 draw_graph(G, output_filename="persian-twitter.html")
