@@ -24,7 +24,7 @@ class SyntacticDP():
             time.sleep(1)
             sentences = tqdm(sentences)
 
-        return list(map(lambda item: sdp2srl_mock(item)[0], list(self.batch_tagger(sentences))))
+        return list(map(lambda item: SyntacticDP.sdp2srl_mock(item)[0], list(self.batch_tagger(sentences))))
 
     def batch_tagger(self, sentences: Union[tqdm, List[Dict[str, str]]]) -> Generator[List[tuple], None, None]:
         for sentence in sentences:
