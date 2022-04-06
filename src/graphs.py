@@ -8,7 +8,7 @@ def build_graph(dict_edges, dict_args: dict = {}, edge_threshold: int = 0, node_
     G = nx.MultiDiGraph()
     if edge_size == None:
         for l in dict_edges:
-            G.add_edge(l["ARG0"], l["ARG1"], weight=l["weight"], label=l["B-V"], title=" ", hidden=False, color=l["color"])
+            G.add_edge(l["ARG0"], l["ARG1"], weight=1, label=l["B-V"], title=" ", hidden=False, color=l["color"])
     else:
         for l in dict_edges:
             G.add_edge(l["ARG0"], l["ARG1"], weight=l["weight"], value=l["weight"], label=l["B-V"], title=" ", hidden=False, color=l["color"])
