@@ -14,9 +14,9 @@ tqdm.pandas()
 
 norm = Normalizer()
 # os.environ["TOKENIZERS_PARALLELISM"] = "false"
-df = pd.read_excel('normalized_tweets.xlsx').sample(10000)
+df = pd.read_excel('normalized_tweets.xlsx').sample(15000)
 df.dropna(inplace=True)
-df['text'] = df.prep_text.progress_apply(lambda item: formalize(item))
+df['text'] = df.text.progress_apply(lambda item: formalize(item))
 df.dropna(inplace=True)
 df['text'] = df.text.progress_apply(lambda item: norm.normalize(item))
 df.dropna(inplace=True)
@@ -60,10 +60,10 @@ narrative_model = build_narrative_model(
     embeddings_type="gensim_full_model",  # see documentation for a list of supported types
 
     embeddings_path="w2v_emb.bin",
-    n_clusters=[[1000], [1000]],
-    top_n_entities=1000,
+    n_clusters=[[4000], [3000]],
+    top_n_entities=4000,
     stop_words=spacy_stopwords,
-    remove_n_letter_words=1,
+    remove_n_letter_words=2,
     progress_bar=True,
 )
 
@@ -169,7 +169,7 @@ temp = complete_narratives[["ARG0_lowdim", "ARG1_lowdim", "B-V_lowdim"]]
 temp.columns = ["ARG0", "ARG1", "B-V"]
 temp = temp[(temp["ARG0"] != "") & (temp["ARG1"] != "") & (temp["B-V"] != "")]
 temp = temp.groupby(["ARG0", "ARG1", "B-V"]).size().reset_index(name="weight")
-temp = temp.sort_values(by="weight", ascending=False).iloc[0:100]  # pick top 100 most frequent narratives
+temp = temp.sort_values(by="weight", ascending=False).iloc[0:150]  # pick top 100 most frequent narratives
 temp = temp.to_dict(orient="records")
 
 for l in temp:
