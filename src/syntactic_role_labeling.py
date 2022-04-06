@@ -37,6 +37,12 @@ def find_pos_index(pos_tagged: List[Tuple[str, str]], role: str) -> int:
     except: return len(pos_tagged)
 
 
+def findall_pos_index(pos_tagged: List[Tuple[str, str]], role: str) -> Generator[int, None, None]:
+    pos_tags = [item[1] for item in pos_tagged]
+    for ind, tag in enumerate(pos_tags):
+        if tag == role: yield ind
+
+
 def find_pos_word(pos_tagged: List[Tuple[str, str]], role: str, index: int) -> str:
     try:    return list(extract_pos_words(pos_tagged, role))[index]
     except: return ''
@@ -48,9 +54,10 @@ def pos2srl(pos_tagged: List[Tuple[str, str]]) -> Generator[Tuple[str, str], Non
     verb_ind = find_pos_index(pos_tagged, 'V')
     clit_ind = find_pos_index(pos_tagged, 'CLITIC')
     for ind, item in enumerate(pos_tagged):
-        if item[1] == 'N' and ind < verb_ind-3:     yield item[0], 'ARG0'
-        elif item[1] == 'N' and ind == clit_ind-1:  yield item[0], 'ARG1'
-        elif item[1] == 'N' and ind >= verb_ind+2:  yield item[0], 'ARG1'
+        if item[1] == 'N' and ind < min(verb_ind, 3):   yield item[0], 'ARG0'
+        elif item[1] == 'N' and ind < verb_ind-3:       yield item[0], 'ARG0'
+        elif item[1] == 'N' and ind == clit_ind-1:      yield item[0], 'ARG1'
+        elif item[1] == 'N' and ind >= verb_ind+2:      yield item[0], 'ARG1'
         else:
             try:    yield item[0], keys[item[1]]
             except: yield item[0], ''
@@ -86,8 +93,9 @@ def mock_tags(rel_tagged: List[Tuple[str, str]]) -> Generator[str, None, None]:
 
 
 def sdp2srl_mock(pos_tagged: List[Tuple[str, str]]) -> List[Dict[str, Union[str, List[str]]]]:
+    verb_index = findall_pos_index(pos_tagged, 'V')
     concat_srl_var = list(concat_srl(pos2srl(pos_tagged)))
-    return [{'verbs': [{'verb': find_pos_word(concat_srl_var, 'V', 0),
+    return [{'verbs': [{'verb': ' '.join([pos_tagged[ind][0] for ind in verb_index]),
                         'description': mock_description(concat_srl_var),
                         'tags': list(mock_tags(concat_srl_var))}],
              'words': [item[0] for item in pos_tagged]}]
