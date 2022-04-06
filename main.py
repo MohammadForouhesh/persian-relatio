@@ -165,7 +165,7 @@ temp = complete_narratives[["ARG0_lowdim", "ARG1_lowdim", "B-V_lowdim"]]
 temp.columns = ["ARG0", "ARG1", "B-V"]
 temp = temp[(temp["ARG0"] != "") & (temp["ARG1"] != "") & (temp["B-V"] != "")]
 temp = temp.groupby(["ARG0", "ARG1", "B-V"]).size().reset_index(name="weight")
-temp = temp.sort_values(by="weight", ascending=False).iloc[0:150]  # pick top 100 most frequent narratives
+temp = temp.sort_values(by="weight", ascending=False).iloc[0:100]  # pick top 100 most frequent narratives
 temp = temp.to_dict(orient="records")
 
 for l in temp:
