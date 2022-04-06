@@ -9,3 +9,5 @@
 *.npy
 .vscode/*
 *.zip
+*.csv
+*.numbers

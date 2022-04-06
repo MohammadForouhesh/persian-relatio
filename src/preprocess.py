@@ -68,3 +68,8 @@ def remove_redundant_characters(text: str) -> str:
                      and False not in [char in 'آ ا ب پ ت ث ج چ ح خ د ذ ر ز ژ س ش ص ض ط ظ ع غ ف ق ک گ ل م ن و ه ی'
                                        for char in word]
                      and len(text.split(' ')) > 1])
+
+
+def remove_sw(sw_list: list, text: str):
+    try:    return ' '.join([word if word not in sw_list else '' for word in text.split()])
+    except: return ''

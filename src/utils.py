@@ -1,4 +1,3 @@
-
 import json
 import re
 import string
@@ -43,8 +42,11 @@ def split_into_sentences(dataframe: pd.DataFrame, output_path: Optional[str] = N
 
     for doc in docs:
         if len(doc['doc']) < 2: continue
-        sentences.append(str(doc['doc'])[:50])
-        doc_indices = doc_indices + [doc["id"]]
+        text = str(doc['doc'])
+        doc_list = [text[text.find(' ', ind)+1: text.find(' ', ind+50)] for ind in range(-1, len(text), 30)]
+        for enum, item in enumerate(doc_list):
+            sentences.append(item)
+            doc_indices = doc_indices + [doc["id"]] + [enum]
 
     if output_path is not None:
         with open(output_path, "w") as f:

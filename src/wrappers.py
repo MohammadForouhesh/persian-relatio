@@ -18,36 +18,17 @@ from .clustering import (
     train_cluster_model,
 )
 from .named_entity_recognition import map_entities, mine_entities
-from .semantic_role_labeling import SRL, extract_roles, process_roles, rename_arguments
-from .syntactic_role_labeling import SyntacticDP
+from .syntactic_role_labeling import SyntacticDP, extract_roles, process_roles, rename_arguments
 from .utils import clean_text, count_values, is_subsequence
 from .verbs import clean_verbs
 
 
-def run_srl(
-    path: str,
-    sentences: List[str],
-    batch_size: Optional[int] = None,
-    max_batch_char_length: Optional[int] = 20_000,
-    cuda_device: int = -1,
-    max_sentence_length: Optional[int] = None,
-    max_number_words: Optional[int] = None,
-    output_path: Optional[str] = None,
-    progress_bar: bool = False,
-):
-
+def run_sdp(sentences: List[str], output_path: Optional[str] = None):
     """
     A wrapper function to run semantic role labeling on a corpus.
     Args:
-        path: location of the SRL model to be used
         sentences: list of sentences
-        batch_size: number of sentences in a batch
-        max_batch_char_length: maximum number of characters in a batch (incompatible with batch_size)
-        cuda_device: GPU only, and it should be one of CUDA_VISIBLE_DEVICES
-        max_sentence_length: drop sentences with the length above this threshold
-        max_number_words: drop the sentences with the number of words above this threshold
         output_path: path to save the narrative model (default is None, which means no saving to disk)
-        progress_bar: print a progress bar (default is False)
     Returns:
         A list of dictionaries with the SRL output
     """

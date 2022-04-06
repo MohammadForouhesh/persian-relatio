@@ -4,35 +4,34 @@ import numpy as np
 from tqdm import tqdm
 from crf_pos.normalization import Normalizer
 from src.graphs import build_graph, draw_graph
-from src.preprocess import remove_redundant_characters, remove_emoji
+from src.preprocess import remove_redundant_characters, remove_emoji, remove_sw
 from src.utils import split_into_sentences
-from src.wrappers import build_narrative_model, run_srl, get_narratives
+from src.wrappers import build_narrative_model, run_sdp, get_narratives
 import os
 from src.utils import formalize
 
 tqdm.pandas()
 
 norm = Normalizer()
-# os.environ["TOKENIZERS_PARALLELISM"] = "false"
-df = pd.read_excel('normalized_tweets.xlsx').sample(15000)
-df.dropna(inplace=True)
-df['text'] = df.text.progress_apply(lambda item: formalize(item))
-df.dropna(inplace=True)
-df['text'] = df.text.progress_apply(lambda item: norm.normalize(item))
-df.dropna(inplace=True)
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+df = pd.read_csv('khabaronline.csv')#.sample(1000)
 print(df.columns)
-df = df[['status_id', 'text']]
-df = df.rename(columns={'status_id': 'id', 'text': 'doc'})
+df['text'] = df.text.progress_apply(lambda item: formalize(item))
+df['text'] = df.text.progress_apply(lambda item: norm.normalize(item))
+print(df.columns)
+df = df[['id', 'text']]
+df = df.rename(columns={'id': 'id', 'text': 'doc'})
 print(df.head())
 
 tqdm.pandas()
 
 ## mac version RND
 
-df.replace('', float('NaN'), inplace=True)
-df.replace(' ', float('NaN'), inplace=True)
 df.doc = df.doc.progress_apply(lambda item: norm.normalize(item))
 df.doc = df.doc.progress_apply(lambda item: remove_redundant_characters(remove_emoji(item)))
+
+df.replace('', float('NaN'), inplace=True)
+df.replace(' ', float('NaN'), inplace=True)
 df.dropna(inplace=True)
 
 split_sentences = split_into_sentences(df, progress_bar=True)
@@ -44,12 +43,11 @@ for i in range(5):
 # Note that SRL is time-consuming, in particular on CPUs.
 # To speed up the annotation, you can also use GPUs via the "cuda_device" argument of the "run_srl()" function.
 
-srl_res = run_srl(
-    path="https://storage.googleapis.com/allennlp-public-models/openie-model.2020.03.26.tar.gz",  # pre-trained model
-    sentences=split_sentences[1],
-    cuda_device=0,
-    progress_bar=True,
-)
+df.replace('', float('NaN'), inplace=True)
+df.replace(' ', float('NaN'), inplace=True)
+df.dropna(inplace=True)
+
+srl_res = run_sdp(split_sentences[1])
 
 file = open('persian.txt', 'r')
 spacy_stopwords = list(file.read().splitlines())
@@ -58,10 +56,9 @@ narrative_model = build_narrative_model(
     srl_res=srl_res,
     sentences=split_sentences[1],
     embeddings_type="gensim_full_model",  # see documentation for a list of supported types
-
-    embeddings_path="w2v_emb.bin",
-    n_clusters=[[4000], [3000]],
-    top_n_entities=4000,
+    embeddings_path="emb_political_persian.bin",
+    n_clusters=[[40], [50]],
+    top_n_entities=50,
     stop_words=spacy_stopwords,
     remove_n_letter_words=2,
     progress_bar=True,
@@ -134,7 +131,6 @@ df = df[['ARG', 'cluster_elements']]
 
 # Replace negated verbs by "not-verb"
 
-
 final_statements['B-V_lowdim_with_neg'] = np.where(final_statements['ARG0_lowdim'] == True,
                                                    'not-' + final_statements['B-V_lowdim'],
                                                    final_statements['B-V_lowdim'])
@@ -162,14 +158,16 @@ indexNames = final_statements[(final_statements['ARG0_lowdim'] == '') |
                               (final_statements['B-V_lowdim'] == '')].index
 
 complete_narratives = final_statements.drop(indexNames)
+complete_narratives = complete_narratives.applymap(lambda item: remove_sw(spacy_stopwords, item))
 complete_narratives.to_excel('complete_narratives.xlsx')
+
 # Plot low-dimensional complete narrative statements in a directed multi-graph
 
 temp = complete_narratives[["ARG0_lowdim", "ARG1_lowdim", "B-V_lowdim"]]
 temp.columns = ["ARG0", "ARG1", "B-V"]
-temp = temp[(temp["ARG0"] != "") & (temp["ARG1"] != "") & (temp["B-V"] != "")]
+temp = temp[(temp["ARG0"] != "") & (temp["ARG1"] != "") & (temp["B-V"] != "") & (temp['ARG0'] != temp['ARG1'])]
 temp = temp.groupby(["ARG0", "ARG1", "B-V"]).size().reset_index(name="weight")
-temp = temp.sort_values(by="weight", ascending=False).iloc[0:150]  # pick top 100 most frequent narratives
+temp = temp.sort_values(by="weight", ascending=False).iloc[0:20]  # pick top 100 most frequent narratives
 temp = temp.to_dict(orient="records")
 
 for l in temp:
