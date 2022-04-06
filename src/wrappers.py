@@ -18,8 +18,7 @@ from .clustering import (
     train_cluster_model,
 )
 from .named_entity_recognition import map_entities, mine_entities
-from .semantic_role_labeling import SRL, extract_roles, process_roles, rename_arguments
-from .syntactic_role_labeling import SyntacticDP
+from .syntactic_role_labeling import SyntacticDP, extract_roles, process_roles, rename_arguments
 from .utils import clean_text, count_values, is_subsequence
 from .verbs import clean_verbs
 
