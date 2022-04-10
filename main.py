@@ -50,7 +50,7 @@ srl_res = run_srl(
 
 
 import spacy
-spacy_stopwords = spacy.lang.en.stop_words.STOP_WORDS
+spacy_stopwords = spacy.language.en.stop_words.STOP_WORDS
 
 # NB: This step usually takes several minutes to run. You might want to grab a coffee.
 
