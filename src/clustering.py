@@ -1,27 +1,41 @@
-import pickle
+# MIT License
+
+# Copyright (c) 2020-2021 ETH Zurich, Andrei V. Plamada
+# Copyright (c) 2020-2021 ETH Zurich, Elliott Ash
+# Copyright (c) 2020-2021 University of St.Gallen, Philine Widmer
+# Copyright (c) 2020-2021 Ecole Polytechnique, Germain Gauthier
+
+# Vectors and Clustering
+# ..................................................................................................................
+# ..................................................................................................................
+
 import time
 import warnings
-import numpy as np
-from tqdm import tqdm
-from copy import deepcopy
-import tensorflow_hub as hub
-from numpy.linalg import norm
 from collections import Counter
-import gensim.downloader as api
-from sklearn.cluster import KMeans
-from gensim.models import Word2Vec
+from copy import deepcopy
 from typing import List, Optional, Union
+
+import gensim.downloader as api
+import numpy as np
+import tensorflow_hub as hub
+from gensim.models import Word2Vec
+from numpy.linalg import norm
+from sklearn.cluster import KMeans
+from tqdm import tqdm
+
 from .utils import count_values, count_words
 
 
 def compute_sif_weights(words_counter: dict, alpha: Optional[float] = 0.001) -> dict:
+
     """
     A function that computes smooth inverse frequency (SIF) weights based on word frequencies.
     (See "Arora, S., Liang, Y., & Ma, T. (2016). A simple but tough-to-beat baseline for sentence embeddings.")
-
-    :param words_counter: A dictionary {"word": frequency}
-    :param alpha:         Regularization parameter
-    :return:              A dictionary {"word": SIF weight}
+    Args:
+        words_counter: a dictionary {"word": frequency}
+        alpha: regularization parameter
+    Returns:
+        A dictionary {"word": SIF weight}
     """
 
     sif_dict = {}
@@ -33,6 +47,7 @@ def compute_sif_weights(words_counter: dict, alpha: Optional[float] = 0.001) -> 
 
 
 class USE:
+
     """
     A class to call the Universal Sentence Encoder model.
     For further details: https://tfhub.dev/google/universal-sentence-encoder/4
@@ -47,35 +62,47 @@ class USE:
 
 
 class SIF_word2vec:
+
     """
     A class to call a trained word2vec model using gensim's library.
     For basic code snippets and additional details: https://radimrehurek.com/gensim/models/word2vec.html
     """
 
-    def __init__(self, path: str, sentences: List[str], alpha: Optional[float] = 0.001, normalize: bool = True):
-        self.w2v_model: Word2Vec = self._load_keyed_vectors(path)
+    def __init__(
+        self,
+        path: str,
+        sentences=List[str],
+        alpha: Optional[float] = 0.001,
+        normalize: bool = True,
+    ):
+
+        self._model = self._load_keyed_vectors(path)
+
         self._words_counter = count_words(sentences)
+
         self._sif_dict = compute_sif_weights(self._words_counter, alpha)
+
+        self._vocab = self._model.vocab
+
         self._normalize = normalize
 
     def _load_keyed_vectors(self, path):
-        """
-        A tool to load w2v model from disk.
-        :param path:   Model path.
-        :return:       None
-        """
-        return Word2Vec.load(path)
+        return Word2Vec.load(path).wv
 
     def __call__(self, tokens: List[str]):
-        res = np.mean([self._sif_dict[token] * self.w2v_model.wv[token] for token in tokens], axis=0)
-        if self._normalize: res = res / norm(res)
+        res = np.mean(
+            [self._sif_dict[token] * self._model[token] for token in tokens], axis=0
+        )
+        if self._normalize:
+            res = res / norm(res)
         return res
 
     def most_similar(self, v):
-        return self.w2v_model.wv.most_similar(positive=[v], topn=1)[0]
+        return self._model.most_similar(positive=[v], topn=1)[0]
 
 
 class SIF_keyed_vectors(SIF_word2vec):
+
     """
     A class to call a pre-trained embeddings model from gensim's library.
     The embeddings are weighted by the smoothed inverse frequency of each token.
@@ -90,44 +117,70 @@ class SIF_keyed_vectors(SIF_word2vec):
 
 
 def get_vector(tokens: List[str], model: Union[USE, SIF_word2vec, SIF_keyed_vectors]):
+
     """
     A function that computes an embedding vector for a list of tokens.
-
-    :param tokens: List of string tokens to embed
-    :param model: Trained embedding model. It can be either:
+    Args:
+        tokens: list of string tokens to embed
+        model: trained embedding model. It can be either:
          - Universal Sentence Encoders (USE)
-         - A full gensim Word2Vec model (SIF_word2vec)
-         - Gensim Keyed Vectors based on a pre-trained model (SIF_keyed_vectors)
-    :return: A two-dimensional numpy array (1, dimension of the embedding space)
+         - a full gensim Word2Vec model (SIF_word2vec)
+         - gensim Keyed Vectors based on a pre-trained model (SIF_keyed_vectors)
+    Returns:
+        A two-dimensional numpy array (1,dimension of the embedding space)
     """
 
-    if isinstance(model, SIF_word2vec):
-        try:                return np.array([model(tokens)]).reshape(1, -1)
-        except KeyError:    return np.array([0 for _ in range(0, model.w2v_model.vector_size)]).reshape(1, -1)
+    if not isinstance(model, (USE, SIF_word2vec, SIF_keyed_vectors)):
+        raise TypeError("Union[USE, SIF_Word2Vec, SIF_keyed_vectors]")
 
-    else:   res = np.array([model(tokens)])
+    if isinstance(model, SIF_word2vec) or isinstance(model, SIF_keyed_vectors):
+        if not tokens:
+            res = None
+        elif any(token not in model._sif_dict for token in tokens):
+            res = None
+        elif any(token not in model._vocab for token in tokens):
+            res = None
+        else:
+            res = model(tokens)
+            res = np.array(
+                [res]
+            )  # correct format to feed the vectors to sklearn clustering methods
+    else:
+        res = model(tokens)
+        res = np.array(
+            [res]
+        )  # correct format to feed the vectors to sklearn clustering methods
+
     return res
 
 
-def get_vectors(postproc_roles, model: Union[USE, SIF_word2vec, SIF_keyed_vectors], used_roles=List[str]):
+def get_vectors(
+    postproc_roles,
+    model: Union[USE, SIF_word2vec, SIF_keyed_vectors],
+    used_roles=List[str],
+):
+
     """
     A function to train a K-Means model on the corpus.
-    :param postproc_roles: List of statements
-    :param model: Trained embedding model. It can be either:
+    Args:
+        postproc_roles: list of statements
+        model: trained embedding model. It can be either:
          - Universal Sentence Encoders (USE)
-         - A full gensim Word2Vec model (SIF_word2vec)
-         - Gensim Keyed Vectors based on a pre-trained model (SIF_keyed_vectors)
-    :param used_roles: List of semantic roles to cluster together
-    :return: A list of vectors
+         - a full gensim Word2Vec model (SIF_word2vec)
+         - gensim Keyed Vectors based on a pre-trained model (SIF_keyed_vectors)
+        used_roles: list of semantic roles to cluster together
+    Returns:
+        A list of vectors
     """
 
     role_counts = count_values(postproc_roles, keys=used_roles)
+
     role_counts = [role.split() for role in list(role_counts)]
 
     vecs = []
     for role in role_counts:
         vec = get_vector(role, model)
-        if vec.shape[1] == 900:
+        if vec is not None:
             vecs.append(vec)
 
     vecs = np.concatenate(vecs)
@@ -135,34 +188,56 @@ def get_vectors(postproc_roles, model: Union[USE, SIF_word2vec, SIF_keyed_vector
     return vecs
 
 
-def train_cluster_model(vecs, n_clusters, random_state: Optional[int] = 0, verbose: Optional[int] = 0):
+def train_cluster_model(
+    vecs,
+    model: Union[USE, SIF_word2vec, SIF_keyed_vectors],
+    n_clusters,
+    random_state: Optional[int] = 0,
+    verbose: Optional[int] = 0,
+):
+
     """
     Train a kmeans model on the corpus.
-
-    :param vecs: list of vectors
-    :param n_clusters: Number of clusters
-    :param random_state: seed for replication (default is 0)
-    :param verbose: see Scikit-learn documentation for details
-    :return: A Scikit-learn kmeans model
+    Args:
+        vecs: list of vectors
+        model: trained embedding model. It can be either:
+         - Universal Sentence Encoders (USE)
+         - a full gensim Word2Vec model (SIF_word2vec)
+         - gensim Keyed Vectors based on a pre-trained model (SIF_keyed_vectors)
+        random_state: seed for replication (default is 0)
+        verbose: see Scikit-learn documentation for details
+    Returns:
+        A Scikit-learn kmeans model
     """
 
-    kmeans = KMeans(n_clusters=n_clusters, random_state=random_state, verbose=verbose).fit(vecs)
+    kmeans = KMeans(
+        n_clusters=n_clusters, random_state=random_state, verbose=verbose
+    ).fit(vecs)
 
     return kmeans
 
 
-def get_clusters(postproc_roles: List[dict], model: Union[USE, SIF_word2vec, SIF_keyed_vectors], kmeans,
-                 used_roles=List[str], progress_bar: bool = False, suffix: str = "_lowdim") -> List[dict]:
+def get_clusters(
+    postproc_roles: List[dict],
+    model: Union[USE, SIF_word2vec, SIF_keyed_vectors],
+    kmeans,
+    used_roles=List[str],
+    progress_bar: bool = False,
+    suffix: str = "_lowdim",
+) -> List[dict]:
+
     """
     Predict clusters based on a pre-trained kmeans model.
-
-    :param postproc_roles: list of statements
-    :param model: Trained embedding model (e.g. either Universal Sentence Encoders, a full gensim Word2Vec model or gensim Keyed Vectors)
-    :param kmeans: A pre-trained sklearn kmeans model
-    :param used_roles: list of semantic roles to consider
-    :param progress_bar: print a progress bar (default is False)
-    :param suffix: suffix for the new dimension-reduced role's name (e.g. 'ARGO_lowdim')
-    :return: A list of dictionaries with the predicted cluster for each role
+    Args:
+        postproc_roles: list of statements
+        model: trained embedding model
+        (e.g. either Universal Sentence Encoders, a full gensim Word2Vec model or gensim Keyed Vectors)
+        kmeans = a pre-trained sklearn kmeans model
+        used_roles: list of semantic roles to consider
+        progress_bar: print a progress bar (default is False)
+        suffix: suffix for the new dimension-reduced role's name (e.g. 'ARGO_lowdim')
+    Returns:
+        A list of dictionaries with the predicted cluster for each role
     """
 
     roles_copy = deepcopy(postproc_roles)
@@ -176,8 +251,7 @@ def get_clusters(postproc_roles: List[dict], model: Union[USE, SIF_word2vec, SIF
         for role, tokens in statement.items():
             if role in used_roles:
                 vec = get_vector(tokens.split(), model)
-                if vec.shape[1] == 900:
-                    vec = np.array(vec, dtype=np.double)
+                if vec is not None:
                     clu = kmeans.predict(vec)[0]
                     roles_copy[i][role] = clu
                 else:
@@ -192,13 +266,17 @@ def get_clusters(postproc_roles: List[dict], model: Union[USE, SIF_word2vec, SIF
     return roles_copy
 
 
-def label_clusters_most_freq(clustering_res: List[dict], postproc_roles: List[dict]) -> dict:
+def label_clusters_most_freq(
+    clustering_res: List[dict], postproc_roles: List[dict]
+) -> dict:
+
     """
     A function which labels clusters by their most frequent term.
-
-    :param clustering_res: list of dictionaries with the predicted cluster for each role
-    :param postproc_roles: list of statements
-    :return: A dictionary associating to each cluster number a label (e.g. the most frequent term in this cluster)
+    Args:
+        clustering_res: list of dictionaries with the predicted cluster for each role
+        postproc_roles: list of statements
+    Returns:
+        A dictionary associating to each cluster number a label (e.g. the most frequent term in this cluster)
     """
 
     temp = {}
@@ -208,12 +286,16 @@ def label_clusters_most_freq(clustering_res: List[dict], postproc_roles: List[di
         for role, cluster in statement.items():
             tokens = postproc_roles[i][role]
             cluster_num = cluster
-            if cluster_num not in temp: temp[cluster_num] = [tokens]
-            else:                       temp[cluster_num].append(tokens)
+            if cluster_num not in temp:
+                temp[cluster_num] = [tokens]
+            else:
+                temp[cluster_num].append(tokens)
 
     for cluster_num, tokens in temp.items():
         token_most_common = Counter(tokens).most_common(2)
-        if len(token_most_common) > 1 and (token_most_common[0][1] == token_most_common[1][1]):
+        if len(token_most_common) > 1 and (
+            token_most_common[0][1] == token_most_common[1][1]
+        ):
             warnings.warn(
                 f"Multiple labels for cluster {cluster_num}- 2 shown: {token_most_common}. First one is picked.",
                 RuntimeWarning,
@@ -224,15 +306,18 @@ def label_clusters_most_freq(clustering_res: List[dict], postproc_roles: List[di
 
 
 def label_clusters_most_similar(kmeans, model) -> dict:
+
     """
     A function which labels clusters by the term closest to the centroid in the embedding
     (i.e. distance is cosine similarity)
-
-    :param kmeans: the trained kmeans model
-    :param model: trained embedding model. It can be either:
+    Args:
+        kmeans: the trained kmeans model
+        model: trained embedding model. It can be either:
          - a full gensim Word2Vec model (SIF_word2vec)
          - gensim Keyed Vectors based on a pre-trained model (SIF_keyed_vectors)
-    :return: A dictionary associating to each cluster number a label (e.g. the most similar term to cluster's centroid)
+    Returns:
+        A dictionary associating to each cluster number a label
+        (e.g. the most similar term to cluster's centroid)
     """
 
     labels = {}
