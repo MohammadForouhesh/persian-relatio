@@ -7,3 +7,5 @@
 *.iml
 *.bin
 *.npy
+*.csv
+*.numbers
