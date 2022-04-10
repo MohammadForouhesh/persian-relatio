@@ -49,16 +49,16 @@ srl_res = run_srl(
 )
 
 
-file = open('persian.txt', 'r')
-spacy_stopwords = list(file.read().splitlines())
+import spacy
+spacy_stopwords = spacy.lang.en.stop_words.STOP_WORDS
 
 # NB: This step usually takes several minutes to run. You might want to grab a coffee.
 
 narrative_model = build_narrative_model(
     srl_res=srl_res,
     sentences=split_sentences[1],
-    embeddings_type="gensim_full_model",  # see documentation for a list of supported types
-    embeddings_path="emb_political_persian.bin",
+    embeddings_type="gensim_keyed_vectors",  # see documentation for a list of supported types
+    embeddings_path="glove-wiki-gigaword-300",
     n_clusters=[[3], [2]],
     top_n_entities=100,
     stop_words=spacy_stopwords,
