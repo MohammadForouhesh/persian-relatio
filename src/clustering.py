@@ -82,7 +82,7 @@ class SIF_word2vec:
 
         self._sif_dict = compute_sif_weights(self._words_counter, alpha)
 
-        self._vocab = self._model.vocab
+        self._vocab = self._model.key_to_index
 
         self._normalize = normalize
 
