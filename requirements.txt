@@ -1,5 +1,5 @@
 requests==2.27.1
-nltk==3.7
+nltk==3.3
 tqdm==4.63.0
 networkx==2.7.1
 pyvis==0.1.9
@@ -10,3 +10,5 @@ sklearn==0.0
 scikit-learn==1.0.2
 transformers==4.17.0
 numpy==1.22.3
+hazm==0.7.0
+spacy==3.2.3
