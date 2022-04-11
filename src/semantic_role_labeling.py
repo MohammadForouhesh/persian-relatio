@@ -232,5 +232,18 @@ def rename_arguments(statements: List[dict], progress_bar: bool = False, suffix:
 
 
 if __name__ == '__main__':
+    import requests
+    import pandas as pd
+    from ast import literal_eval
+
+    r = requests.get(
+        "https://www.dropbox.com/s/coh4ergyrjeolen/split_sentences.json?dl=1"
+    )
+    r = literal_eval(r.text)
+    df = pd.DataFrame(r).T.sample(50)
+    df.replace('.', '', inplace=True)
+    df.replace('', float('NaN'), inplace=True)
+    df.dropna(inplace=True)
     srl = SRL(path="https://storage.googleapis.com/allennlp-public-models/openie-model.2020.03.26.tar.gz")
-    print(srl(sentences=['and I always want this god forsaken framework to work', 'and now I will test']))
+    df['srl'] = df[1].apply(lambda item: srl(sentences=[item]))
+    df.to_csv('english-sentences.csv')
