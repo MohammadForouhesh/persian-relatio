@@ -14,13 +14,13 @@ tqdm.pandas()
 
 norm = Normalizer()
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
-df = pd.read_excel('politics.xlsx').sample(1000)
+df = pd.read_excel('persian-sentences-test.csv')#.sample(1000)
 print(df.columns)
 df['text'] = df.text.progress_apply(lambda item: formalize(item))
 df['text'] = df.text.progress_apply(lambda item: norm.normalize(item))
 print(df.columns)
-df = df[['status_id', 'text']]
-df = df.rename(columns={'status_id': 'id', 'text': 'doc'})
+df = df[['id', 'text']]
+df = df.rename(columns={'id': 'id', 'text': 'doc'})
 print(df.head())
 
 tqdm.pandas()
