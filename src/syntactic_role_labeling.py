@@ -26,7 +26,7 @@ class SyntacticDP():
             time.sleep(1)
             sentences = tqdm(sentences)
 
-        return list(map(lambda item: SyntacticDP.sdp2srl_mock(item)[0], list(self.batch_tagger(sentences))))
+        return list(map(lambda item: list(SyntacticDP.sdp2srl_mock(item)), list(self.batch_tagger(sentences))))
 
     def batch_tagger(self, sentences: Union[tqdm, List[Dict[str, str]]]) -> Generator[List[tuple], None, None]:
         for sentence in sentences:
@@ -98,13 +98,41 @@ class SyntacticDP():
                     else:                   yield f'B-{item[0]}'
 
     @staticmethod
-    def sdp2srl_mock(pos_tagged: List[Tuple[str, str]]) -> List[Dict[str, Union[str, List[str]]]]:
+    def index_coordinator(index_list: List[int]) -> Generator[List[int], None, None]:
+        ind = 0
+        while ind < len(index_list):
+            inner_list = [index_list[ind]]
+            k = 1
+            if ind + k < len(index_list):
+                while index_list[ind] + k == index_list[ind + k]:
+                    inner_list.append(index_list[ind] + k)
+                    k += 1
+                    if ind + k == len(index_list): break
+            ind += k
+            yield inner_list
+
+    @staticmethod
+    def verb_off(pos_tagged: List[Tuple[str, str]], coordinated_index: List[int]) -> Generator[Tuple[str, str], None, None]:
+        for ind, item in enumerate(pos_tagged):
+            if item[1] != 'V' or ind in coordinated_index: yield item
+            else: yield item[0], 'N'
+
+    @staticmethod
+    def vec_moc(pos_tagged: List[Tuple[str, str]], concat_srl_var: List[Tuple[str, str]]) -> Dict[str, Union[str, List[str]]]:
         verb_index = SyntacticDP.findall_pos_index(pos_tagged, 'V')
-        concat_srl_var = list(SyntacticDP.concat_srl(SyntacticDP.pos2srl(pos_tagged)))
-        return [{'verbs': [{'verb': ' '.join([pos_tagged[ind][0] for ind in verb_index]).replace('\u200c', ' '),
+        return {'verbs': [{'verb': ' '.join([pos_tagged[ind][0] for ind in verb_index]).replace('\u200c', ' '),
                             'description': SyntacticDP.mock_description(concat_srl_var),
                             'tags': list(SyntacticDP.mock_tags(concat_srl_var))}],
-                 'words': [item[0] for item in pos_tagged]}]
+                 'words': [item[0] for item in pos_tagged]}
+
+    @staticmethod
+    def sdp2srl_mock(pos_tagged: List[Tuple[str, str]]) -> List[Dict[str, Union[str, List[str]]]]:
+        verb_index = list(SyntacticDP.findall_pos_index(pos_tagged, 'V'))
+        coordinated_verb_index = SyntacticDP.index_coordinator(verb_index)
+        for item in coordinated_verb_index:
+            new_pos_tagged = list(SyntacticDP.verb_off(pos_tagged, item))
+            concat_srl_var = list(SyntacticDP.concat_srl(SyntacticDP.pos2srl(new_pos_tagged)))
+            yield SyntacticDP.vec_moc(new_pos_tagged, concat_srl_var)
 
 
 def extract_roles(srl: List[Dict[str, Any]], used_roles: List[str],
