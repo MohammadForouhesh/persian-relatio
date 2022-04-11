@@ -1,8 +1,10 @@
+import os.path
 import time
 from copy import deepcopy
 from typing import Dict, List, Optional, Tuple, Union, Generator, Any
 
 import numpy as np
+import pandas as pd
 from tqdm import tqdm
 from crf_pos.pos_tagger import WapitiPosTagger
 
@@ -99,7 +101,7 @@ class SyntacticDP():
     def sdp2srl_mock(pos_tagged: List[Tuple[str, str]]) -> List[Dict[str, Union[str, List[str]]]]:
         verb_index = SyntacticDP.findall_pos_index(pos_tagged, 'V')
         concat_srl_var = list(SyntacticDP.concat_srl(SyntacticDP.pos2srl(pos_tagged)))
-        return [{'verbs': [{'verb': ' '.join([pos_tagged[ind][0] for ind in verb_index]),
+        return [{'verbs': [{'verb': ' '.join([pos_tagged[ind][0] for ind in verb_index]).replace('\u200c', ' '),
                             'description': SyntacticDP.mock_description(concat_srl_var),
                             'tags': list(SyntacticDP.mock_tags(concat_srl_var))}],
                  'words': [item[0] for item in pos_tagged]}]
@@ -263,15 +265,18 @@ def rename_arguments(statements: List[dict], progress_bar: bool = False, suffix:
 
 if __name__ == '__main__':
     sdp = SyntacticDP()
-    tagger = WapitiPosTagger()
-    print(tagger['به خدا قسم میخورم این فریمرک کار میکند'])
-    pos = sdp(['شروع کار کلاب صیانت از ۴ میاشد'])
-    print(pos)
-    print(sdp(['من به مدرسه میروم', 'به گزارش افق پیشبینی حاکی از افت سهام نیویورک است']))
-    pos = sdp(['به گزارش افق پیشبینی حاکی از افت سهام نیویورک است'])
-    print(pos)
+    print(os.path.dirname(os.path.dirname(__file__)))
+    with open(os.path.dirname(os.path.dirname(__file__))+'/persian-sentences.txt', 'r') as ps:
+        file = ps.read().splitlines()
 
-    real_world_test_case = "دانشجویان کمک دانشجویان باشید قبال روابط ایران چین حمایت دانشجویان خاهش می کند"
-    print(tagger[real_world_test_case])
-    pos = sdp([real_world_test_case])
-    print(pos)
+    while True:
+        try: file.remove(' ')
+        except: break
+
+    while True:
+        try: file.remove('')
+        except: break
+
+    df = pd.DataFrame(file)
+    df['sdp'] = df.apply(lambda item: sdp([item][0]))
+    df.to_csv(os.path.dirname(os.path.dirname(__file__)) + '/persian-sentences.csv')
