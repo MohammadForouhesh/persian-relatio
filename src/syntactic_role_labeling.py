@@ -157,9 +157,10 @@ def extract_roles(srl: List[Dict[str, Any]], used_roles: List[str],
         srl = tqdm(srl)
 
     for i, sentence_dict in enumerate(srl):
-        role_per_sentence = extract_role_per_sentence(sentence_dict, used_roles)
-        sentence_index.extend([i] * len(role_per_sentence))
-        statements_role_list.extend(role_per_sentence)
+        for sent_dict in sentence_dict:
+            role_per_sentence = extract_role_per_sentence(sent_dict, used_roles)
+            sentence_index.extend([i] * len(role_per_sentence))
+            statements_role_list.extend(role_per_sentence)
 
     return statements_role_list, np.asarray(sentence_index, dtype=np.uint32)
 
