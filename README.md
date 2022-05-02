@@ -11,17 +11,14 @@ A Persian Reimplementation of Prof. Eliot Ash's Framework, Relatio
 
 # Table of Contents
 1. [A Brief Overview](#summary)
-    1. [Introduction](#tpa_intro)
-    2. [Main Problem](#tpa_main)
-    3. [Illustrative Example](#tpa_example)
-    4. [I/O](#tpa_io)
-    5. [Motivation](#tpa_motiv)
-    6. [Related Works](#tpa_lit)
-    7. [Contributions of this paper](#tpa_contribution)
-    8. [Proposed Method](#tpa_method)
-    9. [Experiments](#tpa_exp)
-2. [Implementation details](#tpa_imp)
-3. [Reproducing Results](#tpa_repr)
+2. [Main Problem](#tpa_main)
+3. [Illustrative Example](#tpa_example)
+4. [I/O](#tpa_io)
+5. [Motivation](#tpa_motiv)
+6. [Related Works](#tpa_lit)
+7. [Contributions of this paper](#tpa_contribution)
+8. [Proposed Method](#tpa_method)
+9. [Experiments](#tpa_exp)
 
 ## A Brief Overview <a name="summary"></a>
   <div style="text-align: justify"> The aim of this project is to quantify latent narrative structures in text documents unsupervised. It maps explicit relations between entity groups and identifies coherent entity groups. In particular, we propose a new method of satisfying this requirement - by identifying who does what to whom and by mapping the relationships and interactions among entities in a corpus. By analysing the Persian Twitter in recent years, our team provides an analysis of political and economic narratives. We demonstrate how narratives are dynamic, sentimental, polarised, and interconnected in the political discourse. </div> 
@@ -68,15 +65,28 @@ Construct the set E of latent entities such that: (not for verbs)
 * |E| < |A0 U A1 |
 * N = E ⨉ V ⨉ E
 
-  a. #### Construction 
+  #### a. Construction
   If an entity is frequent, then it is *explicit*, otherwise, it is *implicit*. Sometimes, a sentence entity has no surface form, this is also categorised under the umbrella term of implicit entity.
-  1. Explicit: Apply Named Entity Recognition, then chose top L frequent entities. 
-  2. Implicit: Embed sentence then apply K-Means, each cluster represents a latent entity.
+  1. **Explicit**: Apply Named Entity Recognition, then chose top L frequent entities. 
+  2. **Implicit**: Embed sentence then apply K-Means, each cluster represents a latent entity.
+
+### Stage III: (Pipeline Flowchart)
+![ash0](https://user-images.githubusercontent.com/17898264/166262804-d5f74ccc-af92-404e-a076-76560c1ea3f4.png)
+
+### Stage IV: (Narrative Multi-directional Graph)
+Find the narrative representation of each sentence, create complex narratives by combination. These complex narratives can be analysed using the degree of input and output.
 
 ## Experiments: <a name="tpa_exp"></a>
 ### Datasets:
-Their own making. Crawled all senators and the vast majority of members of the House tweets using twitter API from any period of interest up to 2020, excluding those who left office or were elected for the first time.
+U.S. Congressional Record, 1994-2015. Transcripts of speeches made in the House and Senate with names and party affiliations. Often used as a data source for text analysis in social science applications.
+### Hyperparams: 
+L = 1000
+K = 1000
 
-### Results:
-Trained word embeddings on the entire corpus of legislators’ tweets. The word2vec dictionaries are limited to the 100 most similar words to the seed words and overly general or irrelevant terms are omitted. 
-The detailed results provided in the appendix is summarised in the below table:
+### Results: 
+In short narratives capture the following: 
+* Historical Events: e.g. Sep 11, war on terror
+* Sentiment Polarity
+* Partisanship
+* Debate Structure
+![ash](https://user-images.githubusercontent.com/17898264/166263543-782bf1ae-d4d0-4e48-b2cf-eb4aa7b72e07.png)
