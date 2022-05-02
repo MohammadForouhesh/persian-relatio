@@ -89,4 +89,7 @@ In short narratives capture the following:
 * Sentiment Polarity
 * Partisanship
 * Debate Structure
-![ash](https://user-images.githubusercontent.com/17898264/166263543-782bf1ae-d4d0-4e48-b2cf-eb4aa7b72e07.png)
+
+A sample from the output:
+
+![IMG-20220404-WA0001](https://user-images.githubusercontent.com/17898264/166265922-289899fe-f30a-4910-8fc3-8ad3ee8536b4.jpg)
