@@ -7,7 +7,7 @@ gensim==4.1.2
 pandas==1.4.1
 matplotlib==3.5.1
 scikit-learn==1.0.2
-transformers==4.17.0
+transformers==4.30.0
 numpy==1.22.3
 crf-pos==2.2.2
 torch==1.10.2
